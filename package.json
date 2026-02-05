@@ -1,7 +1,7 @@
 {
   "name": "quarto-extension-helpers",
   "displayName": "Quarto Extension Helpers",
-  "description": "A barebones VS Code extension",
+  "description": "A VS Code extension providing autocomplete for Quarto extensions like roughnotation",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.85.0"
@@ -9,17 +9,27 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
-  "main": "./src/extension.js",
+  "activationEvents": [
+    "onLanguage:quarto"
+  ],
+  "main": "./out/extension.js",
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
   "contributes": {
-    "commands": [
+    "languages": [
       {
-        "command": "quarto-extension-helpers.helloWorld",
-        "title": "Hello World"
+        "id": "quarto",
+        "extensions": [".qmd"],
+        "aliases": ["Quarto", "quarto"]
       }
     ]
   },
   "devDependencies": {
-    "@types/vscode": "^1.85.0"
+    "@types/node": "^20.x",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0"
   }
 }
