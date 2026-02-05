@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 
 // Import providers from each Quarto extension helper
 import { RoughNotationCompletionProvider, RoughNotationColorProvider } from './roughnotation';
+import { FontAwesomeCompletionProvider } from './fontawesome';
 
 export function activate(context: vscode.ExtensionContext): void {
   const quartoSelector: vscode.DocumentSelector = { language: 'quarto', scheme: 'file' };
@@ -9,6 +10,9 @@ export function activate(context: vscode.ExtensionContext): void {
   // Register roughnotation providers
   registerRoughNotationProvider(context, quartoSelector);
   registerRoughNotationColorProvider(context, quartoSelector);
+
+  // Register fontawesome provider
+  registerFontAwesomeProvider(context, quartoSelector);
 }
 
 /**
@@ -41,6 +45,26 @@ function registerRoughNotationColorProvider(
 
   context.subscriptions.push(
     vscode.languages.registerColorProvider(selector, provider)
+  );
+}
+
+/**
+ * Register fontawesome autocomplete provider
+ */
+function registerFontAwesomeProvider(
+  context: vscode.ExtensionContext,
+  selector: vscode.DocumentSelector
+): void {
+  const provider = new FontAwesomeCompletionProvider();
+  // Trigger on space (after "fa") and after typing characters
+  const triggerCharacters = [' ', '<'];
+
+  context.subscriptions.push(
+    vscode.languages.registerCompletionItemProvider(
+      selector,
+      provider,
+      ...triggerCharacters
+    )
   );
 }
 

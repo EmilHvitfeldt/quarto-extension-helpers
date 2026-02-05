@@ -1,0 +1,19 @@
+---
+title: FontAwesome Demo
+filters:
+  - fontawesome
+---
+
+## FontAwesome Icons
+
+Regular icon: {{< fa thumbs-up >}}
+
+Brand icons: {{< fa brands github >}} {{< fa brands twitter >}}
+
+## Try Autocomplete
+
+Type `{{< fa ` and press space to see icon suggestions.
+
+Type `{{< fa th` to filter icons starting with "th" (like `thumbs-up`, `theater-masks`).
+
+Type `{{< fa brands ` to see brand icons.
