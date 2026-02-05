@@ -56,8 +56,8 @@ function registerFontAwesomeProvider(
   selector: vscode.DocumentSelector
 ): void {
   const provider = new FontAwesomeCompletionProvider();
-  // Trigger on space (after "fa") and after typing characters
-  const triggerCharacters = [' ', '<'];
+  // Trigger on space (after "fa" or icon name), '<' (after {{), and '=' (for attribute values)
+  const triggerCharacters = [' ', '<', '='];
 
   context.subscriptions.push(
     vscode.languages.registerCompletionItemProvider(

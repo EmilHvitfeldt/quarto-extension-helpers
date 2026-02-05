@@ -10,10 +10,26 @@ Regular icon: {{< fa thumbs-up >}}
 
 Brand icons: {{< fa brands github >}} {{< fa brands twitter >}}
 
+## Icons with Size
+
+Small: {{< fa star size=sm >}}
+
+Large: {{< fa star size=2xl >}}
+
+Extra large: {{< fa star size=5x >}}
+
+## Icons with Title (Accessibility)
+
+{{< fa envelope title="Send email" >}}
+
+## Combined Attributes
+
+{{< fa brands github size=2xl title="Visit GitHub" >}}
+
 ## Try Autocomplete
 
-Type `{{< fa ` and press space to see icon suggestions.
-
-Type `{{< fa th` to filter icons starting with "th" (like `thumbs-up`, `theater-masks`).
-
-Type `{{< fa brands ` to see brand icons.
+1. Type `{{< fa ` and press space to see icon suggestions
+2. Type `{{< fa th` to filter icons starting with "th"
+3. After an icon name, press space to see `size` and `title` attributes
+4. After `size=`, see all available size options
+5. After `title=`, enter your accessibility text

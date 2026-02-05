@@ -84,6 +84,20 @@ Type inside `{{< fa ... >}}` shortcodes to get suggestions for all FontAwesome 6
 - Regular icons: `{{< fa thumbs-up >}}`
 - Brand icons: `{{< fa brands github >}}`
 
+#### Attribute Autocomplete
+
+After typing an icon name, get suggestions for attributes:
+
+- `size` - Icon size with values for HTML (`2xs`, `xs`, `sm`, `lg`, `xl`, `2xl`, `1x`-`10x`) and LaTeX/PDF (`tiny`, `small`, `large`, `Huge`, etc.)
+- `title` - Accessibility title text
+
+**Examples:**
+```markdown
+{{< fa star size=2xl >}}
+{{< fa envelope title="Send email" >}}
+{{< fa brands github size=5x title="Visit GitHub" >}}
+```
+
 #### Filtering
 
 Start typing to filter icons by name:
