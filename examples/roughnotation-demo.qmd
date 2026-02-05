@@ -1,0 +1,41 @@
+---
+title: Roughnotation Demo
+filters:
+  - roughnotation
+---
+
+## Autocomplete Examples
+
+Try typing inside the curly braces to see autocomplete suggestions:
+
+### Basic annotation
+[This text will be highlighted]{.rn-fragment }
+
+### With type specified
+[Underlined text]{.rn-fragment rn-type=underline}
+
+### With color (click the color square to open picker)
+[Colored highlight]{.rn-fragment rn-type=highlight rn-color=yellow}
+
+### Multiple attributes
+[Fancy annotation]{.rn-fragment rn-type=box rn-color=#ff6b6b rn-strokeWidth=2 rn-padding=5}
+
+### Brackets example
+[Bracketed text]{.rn-fragment rn-type=bracket rn-brackets=left,right}
+
+### All annotation types
+- [highlight]{.rn rn-type=highlight}
+- [underline]{.rn rn-type=underline}
+- [box]{.rn rn-type=box}
+- [circle]{.rn rn-type=circle}
+- [strike-through]{.rn rn-type=strike-through}
+- [crossed-off]{.rn rn-type=crossed-off}
+- [bracket]{.rn rn-type=bracket}
+
+## Test Areas
+
+Type here to test autocomplete:
+
+1. After class: [test]{.rn-fragment }
+2. After typing rn-: [test]{.rn-fragment rn-}
+3. After equals: [test]{.rn-fragment rn-type=}

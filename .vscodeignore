@@ -35,3 +35,6 @@ Thumbs.db
 # Test files
 test/**
 **/*.test.js
+
+# Examples (for development only)
+examples/**
