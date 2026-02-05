@@ -1,0 +1,167 @@
+# Quarto Extension Helpers
+
+VS Code extension providing autocomplete and editor support for popular Quarto extensions.
+
+<!-- TODO: Add hero gif showing autocomplete in action -->
+
+## Features
+
+### Supported Extensions
+
+| Extension | Autocomplete | Color Picker | Brand Colors |
+|-----------|:------------:|:------------:|:------------:|
+| [roughnotation](https://github.com/EmilHvitfeldt/quarto-roughnotation) | ✅ | ✅ | ✅ |
+
+*More extensions coming soon!*
+
+## Installation
+
+<!-- TODO: Add marketplace link once published -->
+
+1. Open VS Code
+2. Go to Extensions (Ctrl+Shift+X / Cmd+Shift+X)
+3. Search for "Quarto Extension Helpers"
+4. Click Install
+
+## Extension Support
+
+### Roughnotation
+
+Provides intelligent autocomplete for [quarto-roughnotation](https://github.com/EmilHvitfeldt/quarto-roughnotation) spans.
+
+#### Attribute Autocomplete
+
+Type inside `{.rn-fragment }` or `{.rn }` spans to get suggestions for all roughnotation attributes:
+
+<!-- TODO: Add gif showing attribute autocomplete -->
+
+**Supported attributes:**
+- `rn-type` - Annotation type (highlight, underline, box, circle, strike-through, crossed-off, bracket)
+- `rn-color` - CSS color for the annotation
+- `rn-animate` - Enable/disable animation
+- `rn-multiline` - Multi-line annotation support
+- `rn-brackets` - Bracket positions (left, right, top, bottom)
+- `rn-animationDuration` - Animation duration in ms
+- `rn-strokeWidth` - Stroke width in pixels
+- `rn-padding` - Padding around annotation
+- `rn-iterations` - Number of drawing passes
+- `fragment-index` - RevealJS fragment ordering
+
+#### Value Autocomplete
+
+After typing an attribute name and `=`, get suggestions for valid values:
+
+<!-- TODO: Add gif showing value autocomplete for rn-type -->
+
+#### Color Picker
+
+Click the color swatch next to any `rn-color` value to open VS Code's native color picker:
+
+<!-- TODO: Add gif showing color picker -->
+
+#### Brand Color Integration
+
+If your project has a `_brand.yml` file with a color palette, those colors appear first in `rn-color` suggestions:
+
+<!-- TODO: Add screenshot showing brand colors in autocomplete -->
+
+```yaml
+# _brand.yml
+color:
+  palette:
+    primary-blue: "#447099"
+    accent-orange: "#EE6331"
+```
+
+When you select a brand color, the hex value is inserted (since roughnotation doesn't understand brand color names).
+
+## Requirements
+
+- VS Code 1.85.0 or higher
+- Files must have `.qmd` extension
+- The relevant Quarto extension must be listed in the document's YAML frontmatter:
+
+```yaml
+---
+title: My Document
+filters:
+  - roughnotation
+---
+```
+
+## How It Works
+
+The extension activates for `.qmd` files and checks the YAML frontmatter to determine which helpers to enable. Autocomplete only appears when:
+
+1. The relevant filter is declared in the frontmatter
+2. The cursor is inside an appropriate span (e.g., `{.rn-fragment ...}`)
+
+This keeps suggestions relevant and avoids cluttering unrelated documents.
+
+## Development
+
+### Setup
+
+```bash
+git clone https://github.com/EmilHvitfeldt/quarto-extension-helpers.git
+cd quarto-extension-helpers
+npm install
+```
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run compile` | Compile TypeScript to JavaScript |
+| `npm run watch` | Compile and watch for changes |
+| `npm run package` | Create `.vsix` package for local testing |
+| `npm run publish` | Publish to VS Code Marketplace |
+| `npm run publish:ovsx` | Publish to Open VSX Marketplace |
+
+### Testing Locally
+
+1. Run `npm run package` to create a `.vsix` file
+2. In VS Code, open the Extensions view (Ctrl+Shift+X / Cmd+Shift+X)
+3. Click the `...` menu → "Install from VSIX..."
+4. Select the generated `.vsix` file
+
+Or press F5 to launch the Extension Development Host with the example files.
+
+### Publishing
+
+#### VS Code Marketplace
+
+1. Install vsce if needed: `npm install -g @vscode/vsce`
+2. Login to your publisher account: `vsce login EmilHvitfeldt`
+3. Run `npm run publish`
+
+See the [VS Code Publishing Guide](https://code.visualstudio.com/api/working-with-extensions/publishing-extension) for more details.
+
+#### Open VSX Marketplace
+
+1. Install ovsx if needed: `npm install -g ovsx`
+2. Get an access token from [Open VSX](https://open-vsx.org/)
+3. Run `npm run package` to create the `.vsix` file
+4. Publish: `ovsx publish quarto-extension-helpers-0.1.0.vsix -p <token>`
+
+See the [Open VSX Wiki](https://github.com/eclipse/openvsx/wiki/Publishing-Extensions) for more details.
+
+## Contributing
+
+Contributions are welcome! If you'd like to add support for another Quarto extension:
+
+1. Create a new file in `src/` named after the extension (e.g., `src/lightbox.ts`)
+2. Implement a `CompletionItemProvider` for the extension's attributes
+3. Register the provider in `src/extension.ts`
+4. Add documentation to this README
+
+See `src/roughnotation.ts` for a reference implementation.
+
+## License
+
+MIT - see [LICENSE](LICENSE) for details.
+
+## Acknowledgments
+
+- [Quarto](https://quarto.org/) - Open-source scientific and technical publishing
+- [Rough Notation](https://roughnotation.com/) - Library for creating sketch-style annotations

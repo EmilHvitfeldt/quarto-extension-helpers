@@ -1,28 +1,48 @@
 {
   "name": "quarto-extension-helpers",
   "displayName": "Quarto Extension Helpers",
-  "description": "A VS Code extension providing autocomplete for Quarto extensions",
-  "version": "0.0.1",
+  "description": "Autocomplete and editor support for popular Quarto extensions (roughnotation, and more)",
+  "version": "0.1.0",
+  "publisher": "EmilHvitfeldt",
+  "author": {
+    "name": "Emil Hvitfeldt"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/EmilHvitfeldt/quarto-extension-helpers"
   },
+  "bugs": {
+    "url": "https://github.com/EmilHvitfeldt/quarto-extension-helpers/issues"
+  },
+  "homepage": "https://github.com/EmilHvitfeldt/quarto-extension-helpers#readme",
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
     "Programming Languages",
-    "Snippets"
+    "Snippets",
+    "Other"
+  ],
+  "keywords": [
+    "quarto",
+    "qmd",
+    "roughnotation",
+    "autocomplete",
+    "markdown"
   ],
   "activationEvents": [
     "onLanguage:quarto"
   ],
   "main": "./out/extension.js",
   "scripts": {
+    "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "lint": "eslint src --ext ts"
+    "lint": "eslint src --ext ts",
+    "package": "vsce package",
+    "publish": "vsce publish",
+    "publish:ovsx": "ovsx publish"
   },
   "contributes": {
     "languages": [
@@ -36,6 +56,7 @@
   "devDependencies": {
     "@types/node": "^20.x",
     "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.22.0",
     "typescript": "^5.3.0"
   }
 }

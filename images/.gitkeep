@@ -1,0 +1,3 @@
+# TODO: Add extension icon (128x128 PNG recommended)
+# Name it icon.png and update package.json with:
+# "icon": "images/icon.png"
