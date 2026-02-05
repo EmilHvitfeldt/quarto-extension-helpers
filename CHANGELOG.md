@@ -19,3 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Brand color support from `_brand.yml` palette
   - Automatic trigger after attribute completion
   - Filter-aware activation (only enables when `roughnotation` is in frontmatter)
+- **FontAwesome support:**
+  - Autocomplete for FontAwesome 6 free icons in `{{< fa ... >}}` shortcodes
+  - Support for regular icons (e.g., `thumbs-up`, `arrow-right`)
+  - Support for brand icons (e.g., `brands github`, `brands twitter`)

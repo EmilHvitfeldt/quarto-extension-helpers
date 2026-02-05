@@ -8,7 +8,8 @@
       "WebFetch(domain:quarto.org)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:gist.github.com)",
-      "WebFetch(domain:gist.githubusercontent.com)"
+      "WebFetch(domain:gist.githubusercontent.com)",
+      "Bash(ls:*)"
     ]
   }
 }

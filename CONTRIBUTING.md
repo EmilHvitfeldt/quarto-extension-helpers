@@ -26,17 +26,16 @@ Thank you for your interest in contributing! This guide will help you add suppor
 
 ```
 src/
-  extension.ts      # Main entry point - registers all providers
-  utils.ts          # Shared utilities (filter detection, brand colors)
-  roughnotation.ts  # Roughnotation extension support
-  [extension].ts    # Add new extension support here
+  extension.ts          # Main entry point - registers all providers
+  utils.ts              # Shared utilities (filter detection, brand colors)
+  <extension>.ts        # Extension-specific completion provider
+  <extension>-data.ts   # Optional: static data for completions (e.g., icon lists)
 examples/
-  [extension]/          # Extension-specific test folder
-    with-brandyml/      # Type of tests
-      *.qmd             # Demo files
-    without-brandyml/   # type of test
-      *.qmd             # Demo files
+  <extension>/          # Extension-specific test files
+    demo.qmd            # Main demo file
 ```
+
+Each supported Quarto extension has its own `.ts` file in `src/` and a corresponding folder in `examples/`.
 
 ## Adding Support for a New Extension
 

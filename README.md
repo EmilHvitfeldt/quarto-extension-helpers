@@ -7,8 +7,7 @@ VS Code extension providing autocomplete and editor support for popular Quarto e
 ### Supported Extensions
 
 - [roughnotation](https://github.com/EmilHvitfeldt/quarto-roughnotation)
-
-*More extensions coming soon!*
+- [fontawesome](https://github.com/quarto-ext/fontawesome)
 
 ## Installation
 
@@ -71,6 +70,27 @@ color:
 
 When you select a brand color, the hex value is inserted (since roughnotation doesn't understand brand color names).
 
+### FontAwesome
+
+Provides intelligent autocomplete for [quarto-fontawesome](https://github.com/quarto-ext/fontawesome) shortcodes.
+
+#### Icon Autocomplete
+
+Type inside `{{< fa ... >}}` shortcodes to get suggestions for all FontAwesome 6 free icons:
+
+<!-- TODO: Add gif showing icon autocomplete -->
+
+**Supported icon types:**
+- Regular icons: `{{< fa thumbs-up >}}`
+- Brand icons: `{{< fa brands github >}}`
+
+#### Filtering
+
+Start typing to filter icons by name:
+
+- Type `th` to see icons like `thumbs-up`, `theater-masks`, `thermometer`
+- Type `brands g` to see brand icons like `brands github`, `brands google`
+
 ## Requirements
 
 - VS Code 1.85.0 or higher
@@ -82,17 +102,10 @@ When you select a brand color, the hex value is inserted (since roughnotation do
 title: My Document
 filters:
   - roughnotation
+  - fontawesome
 ---
 ```
 
-## How It Works
-
-The extension activates for `.qmd` files and checks the YAML frontmatter to determine which helpers to enable. Autocomplete only appears when:
-
-1. The relevant filter is declared in the frontmatter
-2. The cursor is inside an appropriate span (e.g., `{.rn-fragment ...}`)
-
-This keeps suggestions relevant and avoids cluttering unrelated documents.
 
 ## Development
 
@@ -161,3 +174,4 @@ MIT - see [LICENSE](LICENSE) for details.
 
 - [Quarto](https://quarto.org/) - Open-source scientific and technical publishing
 - [Rough Notation](https://roughnotation.com/) - Library for creating sketch-style annotations
+- [FontAwesome](https://fontawesome.com/) - Icon library
