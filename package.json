@@ -1,0 +1,25 @@
+{
+  "name": "quarto-extension-helpers",
+  "displayName": "Quarto Extension Helpers",
+  "description": "A barebones VS Code extension",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./src/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "quarto-extension-helpers.helloWorld",
+        "title": "Hello World"
+      }
+    ]
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0"
+  }
+}
