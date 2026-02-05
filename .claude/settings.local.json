@@ -4,7 +4,8 @@
       "Bash(test:*)",
       "Bash(gh repo clone:*)",
       "Bash(npm install)",
-      "Bash(npm run compile:*)"
+      "Bash(npm run compile:*)",
+      "WebFetch(domain:quarto.org)"
     ]
   }
 }

@@ -1,0 +1,11 @@
+meta:
+  name: "Example Brand"
+
+color:
+  palette:
+    primary-blue: "#447099"
+    accent-orange: "#EE6331"
+    success-green: "#72994E"
+    warning-amber: "#F5A623"
+    dark-slate: "#1D1F21"
+    light-gray: "#F5F5F5"

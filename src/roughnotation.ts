@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { hasFilter } from './utils';
+import { hasFilter, getBrandColors, BrandColor } from './utils';
 
 type ValueType = 'enum' | 'boolean' | 'color' | 'number';
 
@@ -123,12 +123,12 @@ function getAttributeByName(name: string): RnAttribute | undefined {
  * Completion provider for roughnotation attributes in Quarto documents
  */
 export class RoughNotationCompletionProvider implements vscode.CompletionItemProvider {
-  provideCompletionItems(
+  async provideCompletionItems(
     document: vscode.TextDocument,
     position: vscode.Position,
     _token: vscode.CancellationToken,
     _context: vscode.CompletionContext
-  ): vscode.CompletionItem[] | undefined {
+  ): Promise<vscode.CompletionItem[] | undefined> {
     // Check if roughnotation filter is loaded in the document
     if (!hasFilter(document, 'roughnotation')) {
       return undefined;
@@ -157,7 +157,11 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
         completionContext.needsLeadingSpace || false
       );
     } else if (completionContext.type === 'attribute-value' && completionContext.attributeName) {
-      return this.getAttributeValueCompletions(completionContext.attributeName);
+      // Fetch brand colors for rn-color suggestions
+      const brandColors = completionContext.attributeName === 'rn-color'
+        ? await getBrandColors(document)
+        : [];
+      return this.getAttributeValueCompletions(completionContext.attributeName, brandColors);
     }
 
     return undefined;
@@ -318,7 +322,7 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
   /**
    * Get completions for attribute values
    */
-  private getAttributeValueCompletions(attributeName: string): vscode.CompletionItem[] {
+  private getAttributeValueCompletions(attributeName: string, brandColors: BrandColor[] = []): vscode.CompletionItem[] {
     const attr = getAttributeByName(attributeName);
     if (!attr) {
       return [];
@@ -326,13 +330,28 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
 
     const completions: vscode.CompletionItem[] = [];
 
+    // Add brand colors first for rn-color (they take priority)
+    // Insert the hex value since roughnotation doesn't understand brand names
+    if (attr.name === 'rn-color' && brandColors.length > 0) {
+      for (const brandColor of brandColors) {
+        const item = new vscode.CompletionItem(brandColor.name, vscode.CompletionItemKind.Color);
+        item.detail = `Brand: ${brandColor.value}`;
+        item.documentation = new vscode.MarkdownString(`Brand color from \`_brand.yml\`\n\nInserts: \`${brandColor.value}\``);
+        item.insertText = brandColor.value; // Insert hex value, not the name
+        item.sortText = '0' + brandColor.name; // Sort brand colors first
+        completions.push(item);
+      }
+    }
+
     if (attr.values && attr.values.length > 0) {
       for (const value of attr.values) {
         const item = new vscode.CompletionItem(value, vscode.CompletionItemKind.Value);
 
         if (value === attr.defaultValue) {
           item.detail = '(default)';
-          item.sortText = '0' + value; // Sort default first
+          item.sortText = '1' + value; // Sort after brand colors
+        } else {
+          item.sortText = '2' + value;
         }
 
         // For brackets, add hint about comma-separation
@@ -412,14 +431,21 @@ const CSS_COLORS: Record<string, [number, number, number]> = {
  * Color provider for rn-color attributes - shows VS Code's color picker
  */
 export class RoughNotationColorProvider implements vscode.DocumentColorProvider {
-  provideDocumentColors(
+  // Cache brand colors per document for use in provideColorPresentations
+  private brandColorsCache = new Map<string, BrandColor[]>();
+
+  async provideDocumentColors(
     document: vscode.TextDocument,
     _token: vscode.CancellationToken
-  ): vscode.ColorInformation[] {
+  ): Promise<vscode.ColorInformation[]> {
     // Check if roughnotation filter is loaded
     if (!hasFilter(document, 'roughnotation')) {
       return [];
     }
+
+    // Load brand colors
+    const brandColors = await getBrandColors(document);
+    this.brandColorsCache.set(document.uri.toString(), brandColors);
 
     const colors: vscode.ColorInformation[] = [];
     const text = document.getText();
@@ -430,7 +456,7 @@ export class RoughNotationColorProvider implements vscode.DocumentColorProvider 
 
     while ((match = pattern.exec(text)) !== null) {
       const colorValue = match[1];
-      const color = this.parseColor(colorValue);
+      const color = this.parseColor(colorValue, brandColors);
 
       if (color) {
         const startPos = document.positionAt(match.index + 'rn-color='.length);
@@ -444,12 +470,13 @@ export class RoughNotationColorProvider implements vscode.DocumentColorProvider 
     return colors;
   }
 
-  provideColorPresentations(
+  async provideColorPresentations(
     color: vscode.Color,
     context: { document: vscode.TextDocument; range: vscode.Range },
     _token: vscode.CancellationToken
-  ): vscode.ColorPresentation[] {
+  ): Promise<vscode.ColorPresentation[]> {
     const presentations: vscode.ColorPresentation[] = [];
+    const brandColors = this.brandColorsCache.get(context.document.uri.toString()) || [];
 
     // Provide hex format
     const hex = this.colorToHex(color);
@@ -466,7 +493,17 @@ export class RoughNotationColorProvider implements vscode.DocumentColorProvider 
       presentations.push(new vscode.ColorPresentation(`rgb(${r},${g},${b})`));
     }
 
-    // Check if this matches a named color
+    // Check if this matches a brand color - show as info but insert hex
+    // (roughnotation doesn't understand brand color names)
+    const brandColorName = this.findBrandColorName(color, brandColors);
+    if (brandColorName) {
+      const brandPresentation = new vscode.ColorPresentation(`${hex} (${brandColorName})`);
+      brandPresentation.label = `${hex} (${brandColorName})`;
+      brandPresentation.textEdit = new vscode.TextEdit(context.range, hex);
+      presentations.unshift(brandPresentation);
+    }
+
+    // Check if this matches a named CSS color
     const namedColor = this.findNamedColor(color);
     if (namedColor) {
       presentations.unshift(new vscode.ColorPresentation(namedColor));
@@ -475,11 +512,25 @@ export class RoughNotationColorProvider implements vscode.DocumentColorProvider 
     return presentations;
   }
 
-  private parseColor(value: string): vscode.Color | null {
+  private parseColor(value: string, brandColors: BrandColor[] = []): vscode.Color | null {
     // Remove quotes if present
-    const cleanValue = value.replace(/^["']|["']$/g, '').toLowerCase();
+    const cleanValue = value.replace(/^["']|["']$/g, '');
 
-    // Check named colors
+    // Check brand colors first (case-sensitive)
+    for (const brandColor of brandColors) {
+      if (brandColor.name === cleanValue) {
+        // Parse the brand color's value (which should be a hex or color name)
+        return this.parseColorValue(brandColor.value);
+      }
+    }
+
+    return this.parseColorValue(cleanValue);
+  }
+
+  private parseColorValue(value: string): vscode.Color | null {
+    const cleanValue = value.toLowerCase();
+
+    // Check named CSS colors
     if (CSS_COLORS[cleanValue]) {
       const [r, g, b] = CSS_COLORS[cleanValue];
       return new vscode.Color(r / 255, g / 255, b / 255, 1);
@@ -542,6 +593,27 @@ export class RoughNotationColorProvider implements vscode.DocumentColorProvider 
     for (const [name, [nr, ng, nb]] of Object.entries(CSS_COLORS)) {
       if (nr === r && ng === g && nb === b) {
         return name;
+      }
+    }
+
+    return null;
+  }
+
+  private findBrandColorName(color: vscode.Color, brandColors: BrandColor[]): string | null {
+    const r = Math.round(color.red * 255);
+    const g = Math.round(color.green * 255);
+    const b = Math.round(color.blue * 255);
+
+    for (const brandColor of brandColors) {
+      const parsedColor = this.parseColorValue(brandColor.value);
+      if (parsedColor) {
+        const br = Math.round(parsedColor.red * 255);
+        const bg = Math.round(parsedColor.green * 255);
+        const bb = Math.round(parsedColor.blue * 255);
+
+        if (br === r && bg === g && bb === b) {
+          return brandColor.name;
+        }
       }
     }
 
