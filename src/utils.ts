@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
 
 // Cache for frontmatter filter checks (keyed by document URI + version)
 const filterCache = new Map<string, Map<string, boolean>>();

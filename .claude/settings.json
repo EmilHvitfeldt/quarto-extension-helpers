@@ -1,0 +1,20 @@
+{
+  "skills": {
+    "add-extension": {
+      "description": "Scaffold a new Quarto extension helper with completion provider and registration",
+      "file": "skills/add-extension.md"
+    },
+    "add-attribute": {
+      "description": "Add a new attribute to an existing extension helper",
+      "file": "skills/add-attribute.md"
+    },
+    "review-extension": {
+      "description": "Review an extension implementation for correctness and completeness",
+      "file": "skills/review-extension.md"
+    },
+    "prepare-release": {
+      "description": "Prepare the extension for a new version release",
+      "file": "skills/prepare-release.md"
+    }
+  }
+}
