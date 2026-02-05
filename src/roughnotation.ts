@@ -22,6 +22,7 @@ interface CompletionContext {
   type: 'attribute-name' | 'attribute-value';
   prefix?: string;
   attributeName?: string;
+  needsLeadingSpace?: boolean;
 }
 
 const RN_ATTRIBUTES: RnAttribute[] = [
@@ -37,7 +38,7 @@ const RN_ATTRIBUTES: RnAttribute[] = [
     name: 'rn-brackets',
     description: 'Which sides to draw brackets on (can be comma-separated)',
     valueType: 'enum',
-    values: ['left', 'right', 'top', 'bottom'],
+    values: ['left', 'right', 'top', 'bottom', 'left,right', 'top,bottom'],
     defaultValue: 'right'
   },
   {
@@ -141,7 +142,12 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
     }
 
     if (completionContext.type === 'attribute-name') {
-      return this.getAttributeNameCompletions(spanContext.content, completionContext.prefix || '', position);
+      return this.getAttributeNameCompletions(
+        spanContext.content,
+        completionContext.prefix || '',
+        position,
+        completionContext.needsLeadingSpace || false
+      );
     } else if (completionContext.type === 'attribute-value' && completionContext.attributeName) {
       return this.getAttributeValueCompletions(completionContext.attributeName);
     }
@@ -227,15 +233,18 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
     if (attrNameMatch) {
       return {
         type: 'attribute-name',
-        prefix: attrNameMatch[1]
+        prefix: attrNameMatch[1],
+        needsLeadingSpace: false
       };
     }
 
-    // Check if cursor is right after the class with a space
-    if (textBeforeCursor.match(/\.(rn-fragment|rn)\s*$/)) {
+    // Check if cursor is right after the class (with or without space)
+    const classMatch = textBeforeCursor.match(/\.(rn-fragment|rn)(\s*)$/);
+    if (classMatch) {
       return {
         type: 'attribute-name',
-        prefix: ''
+        prefix: '',
+        needsLeadingSpace: classMatch[2].length === 0
       };
     }
 
@@ -245,7 +254,12 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
   /**
    * Get completions for attribute names
    */
-  private getAttributeNameCompletions(spanContent: string, prefix: string, position: vscode.Position): vscode.CompletionItem[] {
+  private getAttributeNameCompletions(
+    spanContent: string,
+    prefix: string,
+    position: vscode.Position,
+    needsLeadingSpace: boolean
+  ): vscode.CompletionItem[] {
     // Find attributes already used in the span
     const usedAttributes = this.getUsedAttributes(spanContent);
 
@@ -256,6 +270,8 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
       position.line,
       position.character
     );
+
+    const spacePrefix = needsLeadingSpace ? ' ' : '';
 
     const completions: vscode.CompletionItem[] = [];
     for (const attr of RN_ATTRIBUTES) {
@@ -276,14 +292,14 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
 
       // Insert with = for easier value entry
       if (attr.valueType === 'enum' || attr.valueType === 'boolean' || attr.valueType === 'color') {
-        item.insertText = new vscode.SnippetString(`${attr.name}=\${1}`);
+        item.insertText = new vscode.SnippetString(`${spacePrefix}${attr.name}=\${1}`);
         // Trigger suggestions for values after inserting
         item.command = {
           command: 'editor.action.triggerSuggest',
           title: 'Trigger Suggest'
         };
       } else {
-        item.insertText = new vscode.SnippetString(`${attr.name}=\${1:${attr.placeholder || ''}}`);
+        item.insertText = new vscode.SnippetString(`${spacePrefix}${attr.name}=\${1:${attr.placeholder || ''}}`);
       }
 
       completions.push(item);
