@@ -84,7 +84,7 @@ When the user runs this skill, perform a comprehensive review by reading:
 
 ### 6. Documentation Checks
 
-- [ ] Extension added to README.md supported extensions table
+- [ ] Extension added to README.md supported extensions list
 - [ ] Extension has dedicated section in README.md
 - [ ] Section includes TODO comments for screenshots/gifs
 - [ ] Example file exists at `examples/<extension-name>-demo.qmd`

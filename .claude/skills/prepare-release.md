@@ -59,7 +59,7 @@ Verify these items are complete:
 - [ ] All TODO comments in README.md addressed (search for `<!-- TODO:`)
 - [ ] Extension icon exists at `images/icon.png` (128x128 PNG recommended)
 - [ ] `package.json` has `"icon": "images/icon.png"` field
-- [ ] All supported extensions listed in README.md table
+- [ ] All supported extensions listed in README.md
 - [ ] CONTRIBUTING.md is up to date
 - [ ] No TypeScript compilation errors (run `npm run compile`)
 - [ ] Extension tested in development host (F5)
@@ -140,7 +140,7 @@ New version: 0.2.0 ✅ (valid semver, greater than current)
 | README TODOs | ⚠️ | 5 screenshot TODOs remaining |
 | Extension icon | ❌ | images/icon.png not found |
 | package.json icon field | ❌ | Missing "icon" field |
-| README extensions table | ✅ | roughnotation listed |
+| README extensions list | ✅ | roughnotation listed |
 | TypeScript compilation | ✅ | No errors |
 | CHANGELOG entries | ✅ | Has unreleased content |
 

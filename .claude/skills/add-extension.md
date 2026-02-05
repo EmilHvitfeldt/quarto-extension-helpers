@@ -161,7 +161,7 @@ filters:
 ### 5. Update Documentation
 
 Update `README.md`:
-- Add extension to the supported extensions table with checkmarks for features
+- Add extension to the supported extensions list
 - Add a section describing the extension's features
 - Include TODO comments for screenshots/gifs:
   ```markdown

@@ -9,7 +9,7 @@ filters:
 Try typing inside the curly braces to see autocomplete suggestions:
 
 ### Basic annotation
-[This text will be highlighted]{.rn-fragment }
+[This text will be highlighted]{.rn-fragment rn-brackets=left,right rn-padding=10 rn-color=#447099}
 
 ### With type specified
 [Underlined text]{.rn-fragment rn-type=underline}

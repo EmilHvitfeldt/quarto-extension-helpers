@@ -2,15 +2,11 @@
 
 VS Code extension providing autocomplete and editor support for popular Quarto extensions.
 
-<!-- TODO: Add hero gif showing autocomplete in action -->
-
 ## Features
 
 ### Supported Extensions
 
-| Extension | Autocomplete | Color Picker | Brand Colors |
-|-----------|:------------:|:------------:|:------------:|
-| [roughnotation](https://github.com/EmilHvitfeldt/quarto-roughnotation) | ✅ | ✅ | ✅ |
+- [roughnotation](https://github.com/EmilHvitfeldt/quarto-roughnotation)
 
 *More extensions coming soon!*
 
