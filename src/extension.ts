@@ -4,8 +4,6 @@ import * as vscode from 'vscode';
 import { RoughNotationCompletionProvider } from './roughnotation';
 
 export function activate(context: vscode.ExtensionContext): void {
-  console.log('Extension "quarto-extension-helpers" is now active!');
-
   const quartoSelector: vscode.DocumentSelector = { language: 'quarto', scheme: 'file' };
 
   // Register roughnotation completion provider
@@ -20,7 +18,7 @@ function registerRoughNotationProvider(
   selector: vscode.DocumentSelector
 ): void {
   const provider = new RoughNotationCompletionProvider();
-  const triggerCharacters = [' ', '=', '-'];
+  const triggerCharacters = [' ', '=', '-', '.'];
 
   context.subscriptions.push(
     vscode.languages.registerCompletionItemProvider(

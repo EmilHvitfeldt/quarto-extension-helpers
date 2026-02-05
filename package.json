@@ -3,11 +3,17 @@
   "displayName": "Quarto Extension Helpers",
   "description": "A VS Code extension providing autocomplete for Quarto extensions",
   "version": "0.0.1",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Other"
+    "Programming Languages",
+    "Snippets"
   ],
   "activationEvents": [
     "onLanguage:quarto"

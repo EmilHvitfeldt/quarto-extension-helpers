@@ -3,6 +3,11 @@ import { hasFilter } from './utils';
 
 type ValueType = 'enum' | 'boolean' | 'color' | 'number';
 
+/**
+ * Roughnotation attribute definition.
+ * Note: defaultValue and placeholder are strings even for boolean/number types
+ * since they're used directly in completion text insertion.
+ */
 interface RnAttribute {
   name: string;
   description: string;
@@ -13,8 +18,6 @@ interface RnAttribute {
 }
 
 interface SpanContext {
-  start: number;
-  end: number;
   content: string;
 }
 
@@ -107,8 +110,13 @@ const RN_ATTRIBUTES: RnAttribute[] = [
   }
 ];
 
+// Build a Map for O(1) attribute lookup
+const RN_ATTRIBUTES_MAP = new Map<string, RnAttribute>(
+  RN_ATTRIBUTES.map(attr => [attr.name, attr])
+);
+
 function getAttributeByName(name: string): RnAttribute | undefined {
-  return RN_ATTRIBUTES.find(attr => attr.name === name);
+  return RN_ATTRIBUTES_MAP.get(name);
 }
 
 /**
@@ -156,7 +164,8 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
   }
 
   /**
-   * Parse the line to find span context (content between { and })
+   * Parse the line to find span context (content between { and }).
+   * Note: This only works for single-line spans. Multi-line spans are not supported.
    */
   private getSpanContext(lineText: string, cursorPos: number): SpanContext | null {
     // Find the opening brace before cursor
@@ -200,19 +209,17 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
       return null;
     }
 
-    return {
-      start: braceStart,
-      end: braceEnd,
-      content: content
-    };
+    return { content };
   }
 
   /**
-   * Check if span content contains roughnotation class
+   * Check if span content contains roughnotation class.
+   * Only matches class notation at the start or after whitespace, not inside quoted values.
    */
   private isRoughNotationSpan(content: string): boolean {
-    // Match .rn-fragment or .rn (but not .rn- followed by other things like .rn-type)
-    return /\.rn-fragment\b/.test(content) || /\.rn\b/.test(content);
+    // Match .rn-fragment or .rn at start or after whitespace
+    // This avoids matching inside attribute values like foo=".rn"
+    return /(?:^|\s)\.rn-fragment\b/.test(content) || /(?:^|\s)\.rn\b/.test(content);
   }
 
   /**
@@ -351,12 +358,14 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
   }
 
   /**
-   * Extract already-used attribute names from span content
+   * Extract already-used attribute names from span content.
+   * Only matches attributes after whitespace to avoid partial matches like "data-rn-type".
    */
   private getUsedAttributes(content: string): Set<string> {
     const used = new Set<string>();
-    // Match attribute=value or attribute="value" patterns
-    const matches = content.matchAll(/([\w-]+)=/g);
+    // Match attribute=value patterns that start after whitespace or at beginning
+    // This avoids matching "data-rn-type=" and incorrectly extracting "rn-type"
+    const matches = content.matchAll(/(?:^|\s)([\w-]+)=/g);
     for (const match of matches) {
       used.add(match[1]);
     }

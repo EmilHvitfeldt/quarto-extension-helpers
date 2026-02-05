@@ -9,6 +9,7 @@ node_modules/**
 # Source control
 .git/**
 .gitignore
+package-lock.json
 
 # TypeScript source (only need compiled output)
 src/**
