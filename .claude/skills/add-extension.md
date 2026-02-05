@@ -138,9 +138,47 @@ function register<ExtensionName>ColorProvider(
 }
 ```
 
-### 4. Create Example File
+### 4. Create Example Files
 
-Create `examples/<extension-name>-demo.qmd`:
+Create an extension-specific example folder with demo files:
+
+- `without-brandyml/demo.qmd` - **Main demo** with all features and attributes
+- `with-brandyml/demo.qmd` - **Color-only demo** for testing brand color integration (only needed if extension has color attributes)
+
+**`examples/<extension-name>/with-brandyml/_brand.yml`** (copy from roughnotation example or create new):
+
+```yaml
+meta:
+  name: "Example Brand"
+
+color:
+  palette:
+    primary-blue: "#447099"
+    accent-orange: "#EE6331"
+    success-green: "#72994E"
+```
+
+**`examples/<extension-name>/with-brandyml/demo.qmd`** (focused on color features only, if extension has color attributes):
+
+```markdown
+---
+title: <Extension Name> Brand Colors Demo
+filters:
+  - <extension-name>
+---
+
+## Brand Color Integration
+
+Test that brand colors from `_brand.yml` appear in autocomplete:
+
+### Color autocomplete
+[Example with brand color]{.<class-name> color-attr=}
+
+### Color picker
+[Example with hex color]{.<class-name> color-attr=#447099}
+```
+
+**`examples/<extension-name>/without-brandyml/demo.qmd`** (full demo with all features):
 
 ```markdown
 ---
@@ -156,6 +194,9 @@ filters:
 
 ### With attributes
 [Example text]{.<class-name> attr=value}
+
+### All attribute types
+- Show examples of each attribute...
 ```
 
 ### 5. Update Documentation

@@ -1,0 +1,21 @@
+---
+title: Roughnotation Brand Colors Demo
+filters:
+  - roughnotation
+---
+
+## Brand Color Integration
+
+Test that brand colors from `_brand.yml` appear in autocomplete:
+
+### Color autocomplete
+Type `rn-color=` and select a brand color - it inserts the hex value:
+
+[Brand primary]{.rn-fragment rn-type=highlight rn-color=}
+[Brand accent]{.rn-fragment rn-type=underline rn-color=#EE6331}
+
+### Color picker
+Click the color square to open the picker and verify brand colors appear:
+
+[Highlight with color]{.rn-fragment rn-type=highlight rn-color=#447099}
+[Box with color]{.rn-fragment rn-type=box rn-color=#72994E}

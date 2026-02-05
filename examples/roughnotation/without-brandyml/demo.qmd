@@ -17,12 +17,6 @@ Try typing inside the curly braces to see autocomplete suggestions:
 ### With color (click the color square to open picker)
 [Colored highlight]{.rn-fragment rn-type=highlight rn-color=yellow}
 
-### Using brand colors (from _brand.yml)
-Type rn-color= and select a brand color - it inserts the hex value:
-
-[Brand primary]{.rn-fragment rn-type=highlight rn-color=}
-[Brand accent]{.rn-fragment rn-type=underline rn-color=#EE6331}
-
 ### Multiple attributes
 [Fancy annotation]{.rn-fragment rn-type=box rn-color=#ff6b6b rn-strokeWidth=2 rn-padding=5}
 

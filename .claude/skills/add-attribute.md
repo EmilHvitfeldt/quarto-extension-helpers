@@ -86,9 +86,11 @@ Add the new attribute to the attributes array in `src/<extension-name>.ts`.
 
 **Note:** For color attributes, the completion provider should also integrate brand colors from `_brand.yml`. Check if the extension already has color support - if not, this may require additional implementation.
 
-### 5. Update Example File
+### 5. Update Example Files
 
-If relevant, add an example using the new attribute to `examples/<extension-name>-demo.qmd`.
+Add an example using the new attribute to the appropriate demo file:
+- `examples/<extension-name>/without-brandyml/demo.qmd` - add examples for all attribute types (this is the main demo)
+- `examples/<extension-name>/with-brandyml/demo.qmd` - only update if adding a **color** attribute (this demo focuses solely on brand color integration)
 
 ### 6. Update CHANGELOG
 
@@ -125,7 +127,7 @@ User: It's a number, controls the delay before animation starts in milliseconds,
 Claude: I'll add the rn-delay attribute to RN_ATTRIBUTES...
 
 [Adds attribute definition]
-[Updates examples/roughnotation-demo.qmd]
+[Updates examples/roughnotation/without-brandyml/demo.qmd]
 [Updates CHANGELOG.md]
 [Runs npm run compile]
 

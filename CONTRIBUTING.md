@@ -31,8 +31,11 @@ src/
   roughnotation.ts  # Roughnotation extension support
   [extension].ts    # Add new extension support here
 examples/
-  *.qmd             # Test files for development
-  _brand.yml        # Example brand configuration
+  [extension]/          # Extension-specific test folder
+    with-brandyml/      # Type of tests
+      *.qmd             # Demo files
+    without-brandyml/   # type of test
+      *.qmd             # Demo files
 ```
 
 ## Adding Support for a New Extension
@@ -110,7 +113,12 @@ function registerMyExtensionProvider(
 
 ### 3. Add Example Files
 
-Create `examples/[extension]-demo.qmd` with test cases.
+Create an extension-specific example folder with demo files:
+- `examples/[extension]/without-brandyml/demo.qmd` - **main demo** with all features and attributes
+- `examples/[extension]/with-brandyml/demo.qmd` - **color-only demo** for testing brand color integration (only needed if extension has color attributes)
+- `examples/[extension]/with-brandyml/_brand.yml` - brand configuration for testing
+
+This structure allows each extension to have its own test environment and supports testing with and without `_brand.yml` present.
 
 ### 4. Update Documentation
 

@@ -17,7 +17,8 @@ Reviews a Quarto extension helper for correctness, completeness, and best practi
 When the user runs this skill, perform a comprehensive review by reading:
 - `src/<extension-name>.ts`
 - `src/extension.ts`
-- `examples/<extension-name>-demo.qmd`
+- `examples/<extension-name>/with-brandyml/demo.qmd`
+- `examples/<extension-name>/without-brandyml/demo.qmd`
 - `README.md`
 - `CHANGELOG.md`
 
@@ -87,9 +88,14 @@ When the user runs this skill, perform a comprehensive review by reading:
 - [ ] Extension added to README.md supported extensions list
 - [ ] Extension has dedicated section in README.md
 - [ ] Section includes TODO comments for screenshots/gifs
-- [ ] Example file exists at `examples/<extension-name>-demo.qmd`
-- [ ] Example file has correct YAML frontmatter with filter
-- [ ] Example demonstrates various attributes
+- [ ] Example folder exists at `examples/<extension-name>/`
+- [ ] Example files exist in both subfolders:
+  - `examples/<extension-name>/with-brandyml/demo.qmd`
+  - `examples/<extension-name>/without-brandyml/demo.qmd`
+- [ ] `_brand.yml` exists in `with-brandyml` folder
+- [ ] Example files have correct YAML frontmatter with filter
+- [ ] `without-brandyml/demo.qmd` demonstrates all attributes (main demo)
+- [ ] `with-brandyml/demo.qmd` focuses only on color/brand integration (if extension has color attributes)
 - [ ] CHANGELOG.md has entry under `[Unreleased]` or appropriate version
 
 ### 7. Output Format
@@ -120,7 +126,7 @@ User: /review-extension roughnotation
 
 Claude: I'll review the roughnotation extension implementation...
 
-[Reads src/roughnotation.ts, src/extension.ts, README.md, examples/roughnotation-demo.qmd, CHANGELOG.md]
+[Reads src/roughnotation.ts, src/extension.ts, README.md, examples/roughnotation/with-brandyml/demo.qmd, examples/roughnotation/without-brandyml/demo.qmd, CHANGELOG.md]
 
 ## Review Summary
 
