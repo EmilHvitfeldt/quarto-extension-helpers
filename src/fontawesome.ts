@@ -58,6 +58,8 @@ interface ShortcodeContext {
   attributeName?: string;
   /** Whether there's a space before >}} */
   hasSpaceBeforeEnd: boolean;
+  /** Whether a leading space is needed before the completion */
+  needsLeadingSpace: boolean;
 }
 
 /**
@@ -128,8 +130,9 @@ export class FontAwesomeCompletionProvider implements vscode.CompletionItemProvi
     }
 
     // Check if there's already a space before >}}
+    // If shortcodeEndRelative === 0, cursor is right before >}} with no space
     const textBeforeEnd = afterCursor.substring(0, shortcodeEndRelative);
-    const hasSpaceBeforeEnd = textBeforeEnd.endsWith(' ') || shortcodeEndRelative === 0;
+    const hasSpaceBeforeEnd = shortcodeEndRelative > 0 && textBeforeEnd.endsWith(' ');
 
     // Extract full content between "{{< fa" and ">}}"
     const faEnd = shortcodeStart + '{{< fa'.length;
@@ -148,8 +151,11 @@ export class FontAwesomeCompletionProvider implements vscode.CompletionItemProvi
     // Content before cursor
     const contentBeforeCursor = lineText.substring(faEnd, cursorPos);
 
+    // Check if there's a space immediately after "fa"
+    const hasSpaceAfterFa = lineText[faEnd] === ' ';
+
     // Determine completion type and context
-    return this.analyzeContext(contentBeforeCursor, fullContent, contentStart, cursorPos, hasSpaceBeforeEnd);
+    return this.analyzeContext(contentBeforeCursor, fullContent, contentStart, cursorPos, hasSpaceBeforeEnd, hasSpaceAfterFa);
   }
 
   /**
@@ -160,7 +166,8 @@ export class FontAwesomeCompletionProvider implements vscode.CompletionItemProvi
     fullContent: string,
     contentStart: number,
     cursorPos: number,
-    hasSpaceBeforeEnd: boolean
+    hasSpaceBeforeEnd: boolean,
+    hasSpaceAfterFa: boolean
   ): ShortcodeContext {
     const trimmedBefore = contentBeforeCursor.trim();
 
@@ -178,7 +185,8 @@ export class FontAwesomeCompletionProvider implements vscode.CompletionItemProvi
         typedText: typedValue,
         tokenStart,
         attributeName: attrName,
-        hasSpaceBeforeEnd
+        hasSpaceBeforeEnd,
+        needsLeadingSpace: false // After '=', no leading space needed
       };
     }
 
@@ -187,26 +195,27 @@ export class FontAwesomeCompletionProvider implements vscode.CompletionItemProvi
 
     if (hasIcon) {
       // After icon, suggest attributes
-      // Find what's being typed (last word)
+      // Find what's being typed (last word after space)
       const lastSpaceIndex = contentBeforeCursor.lastIndexOf(' ');
       const typedText = lastSpaceIndex >= 0
         ? contentBeforeCursor.substring(lastSpaceIndex + 1)
         : '';
-      const tokenStart = lastSpaceIndex >= 0
-        ? contentStart + lastSpaceIndex + 1
-        : contentStart;
+      // tokenStart = cursor position minus the length of what's been typed
+      const tokenStart = cursorPos - typedText.length;
 
       return {
         fullContent,
         contentStart,
         completionType: 'attribute-name',
         typedText,
-        tokenStart: Math.min(tokenStart, cursorPos),
-        hasSpaceBeforeEnd
+        tokenStart,
+        hasSpaceBeforeEnd,
+        needsLeadingSpace: false // After icon + space, no leading space needed
       };
     }
 
     // No icon yet, suggest icons
+    // Need leading space if there's no space after "fa"
     const tokenStart = contentStart;
     const typedText = trimmedBefore;
 
@@ -216,7 +225,8 @@ export class FontAwesomeCompletionProvider implements vscode.CompletionItemProvi
       completionType: 'icon',
       typedText,
       tokenStart,
-      hasSpaceBeforeEnd
+      hasSpaceBeforeEnd,
+      needsLeadingSpace: !hasSpaceAfterFa
     };
   }
 
@@ -239,9 +249,16 @@ export class FontAwesomeCompletionProvider implements vscode.CompletionItemProvi
     // Check if first part is a valid icon name
     if (parts.length >= 1) {
       const potentialIcon = parts[0];
-      // It's an icon if it's in our list or looks like an icon name (not an attribute)
+
+      // Don't treat known attribute names as icons
+      const attributeNames = ATTRIBUTES.map(a => a.name);
+      if (attributeNames.includes(potentialIcon)) {
+        return false;
+      }
+
+      // It's an icon if it's in our list or looks like an icon name
       return FONTAWESOME_ICONS.includes(potentialIcon as any) ||
-             (!potentialIcon.includes('=') && /^[a-z0-9-]+$/i.test(potentialIcon));
+             /^[a-z0-9-]+$/i.test(potentialIcon);
     }
 
     return false;
@@ -265,11 +282,6 @@ export class FontAwesomeCompletionProvider implements vscode.CompletionItemProvi
       position.character
     );
 
-    // Check if we need leading/trailing spaces
-    const needsLeadingSpace = context.tokenStart > context.contentStart
-      ? false
-      : context.contentStart > 0;
-
     for (const icon of FONTAWESOME_ICONS) {
       // Filter by typed text (case-insensitive prefix match)
       if (typedText && !icon.toLowerCase().startsWith(typedText.toLowerCase())) {
@@ -287,7 +299,7 @@ export class FontAwesomeCompletionProvider implements vscode.CompletionItemProvi
           : `FontAwesome icon: \`{{< fa ${icon} >}}\``
       );
 
-      const leadingSpace = needsLeadingSpace ? ' ' : '';
+      const leadingSpace = context.needsLeadingSpace ? ' ' : '';
       const trailingSpace = context.hasSpaceBeforeEnd ? '' : ' ';
       item.insertText = leadingSpace + icon + trailingSpace;
       item.range = replaceRange;
