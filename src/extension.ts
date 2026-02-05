@@ -1,13 +1,14 @@
 import * as vscode from 'vscode';
 
 // Import providers from each Quarto extension helper
-import { RoughNotationCompletionProvider } from './roughnotation';
+import { RoughNotationCompletionProvider, RoughNotationColorProvider } from './roughnotation';
 
 export function activate(context: vscode.ExtensionContext): void {
   const quartoSelector: vscode.DocumentSelector = { language: 'quarto', scheme: 'file' };
 
-  // Register roughnotation completion provider
+  // Register roughnotation providers
   registerRoughNotationProvider(context, quartoSelector);
+  registerRoughNotationColorProvider(context, quartoSelector);
 }
 
 /**
@@ -26,6 +27,20 @@ function registerRoughNotationProvider(
       provider,
       ...triggerCharacters
     )
+  );
+}
+
+/**
+ * Register roughnotation color provider for color picker support
+ */
+function registerRoughNotationColorProvider(
+  context: vscode.ExtensionContext,
+  selector: vscode.DocumentSelector
+): void {
+  const provider = new RoughNotationColorProvider();
+
+  context.subscriptions.push(
+    vscode.languages.registerColorProvider(selector, provider)
   );
 }
 
