@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { hasFilter } from './utils';
 
 type ValueType = 'enum' | 'boolean' | 'color' | 'number';
 
@@ -119,6 +120,11 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
     _token: vscode.CancellationToken,
     _context: vscode.CompletionContext
   ): vscode.CompletionItem[] | undefined {
+    // Check if roughnotation filter is loaded in the document
+    if (!hasFilter(document, 'roughnotation')) {
+      return undefined;
+    }
+
     const lineText = document.lineAt(position).text;
     const textBeforeCursor = lineText.substring(0, position.character);
 
