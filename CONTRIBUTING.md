@@ -45,7 +45,7 @@ Create `src/[extension-name].ts` with:
 
 ```typescript
 import * as vscode from 'vscode';
-import { hasFilter } from './utils';
+import { hasFilter } from './utils'; // Only if filter detection is needed
 
 // Define attributes for the extension
 const ATTRIBUTES = [
@@ -66,13 +66,13 @@ export class MyExtensionCompletionProvider implements vscode.CompletionItemProvi
     _token: vscode.CancellationToken,
     _context: vscode.CompletionContext
   ): vscode.CompletionItem[] | undefined {
-    // Check if extension filter is loaded
-    if (!hasFilter(document, 'extension-name')) {
-      return undefined;
-    }
+    // Optional: Check if extension filter is loaded (see "Filter Detection" below)
+    // if (!hasFilter(document, 'extension-name')) {
+    //   return undefined;
+    // }
 
     // Implement completion logic
-    // See roughnotation.ts for reference
+    // See roughnotation.ts or fontawesome.ts for reference
   }
 }
 ```
@@ -131,15 +131,29 @@ Add your changes under `[Unreleased]` in `CHANGELOG.md`.
 
 ## Key Patterns
 
-### Filter Detection
+### Filter Detection (Optional)
 
-Use `hasFilter(document, 'filter-name')` to check if an extension is enabled:
+Some extensions require their filter to be declared in the document's YAML frontmatter before providing completions. Others (like FontAwesome) work without this requirement because their syntax is distinctive enough.
+
+**When to use filter detection:**
+- The extension uses generic syntax that could conflict with other completions
+- The extension modifies existing elements (like roughnotation's span attributes)
+
+**When to skip filter detection:**
+- The extension uses distinctive shortcode syntax (like `{{< fa ... >}}`)
+- False positives are unlikely or harmless
+
+To check if an extension is enabled:
 
 ```typescript
+import { hasFilter } from './utils';
+
 if (!hasFilter(document, 'myextension')) {
   return undefined;
 }
 ```
+
+See `roughnotation.ts` for an example with filter detection, and `fontawesome.ts` for one without.
 
 ### Context Detection
 
@@ -160,7 +174,7 @@ const brandColors = await getBrandColors(document);
 1. Press F5 to launch Extension Development Host
 2. Open example `.qmd` files
 3. Test autocomplete triggers and suggestions
-4. Test that completions only appear when the filter is declared
+4. If your extension uses filter detection, test that completions only appear when the filter is declared
 
 ## Code Style
 

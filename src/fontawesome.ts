@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { hasFilter } from './utils';
 import { FONTAWESOME_ICONS } from './fontawesome-icons';
 
 /** Size values for FontAwesome icons (sortOrder controls display order) */
@@ -78,10 +77,6 @@ export class FontAwesomeCompletionProvider implements vscode.CompletionItemProvi
     _token: vscode.CancellationToken,
     _context: vscode.CompletionContext
   ): vscode.CompletionItem[] | undefined {
-    // Check if fontawesome filter is loaded in the document
-    if (!hasFilter(document, 'fontawesome')) {
-      return undefined;
-    }
 
     const lineText = document.lineAt(position).text;
 

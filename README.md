@@ -108,18 +108,6 @@ Start typing to filter icons by name:
 ## Requirements
 
 - VS Code 1.85.0 or higher
-- Files must have `.qmd` extension
-- The relevant Quarto extension must be listed in the document's YAML frontmatter:
-
-```yaml
----
-title: My Document
-filters:
-  - roughnotation
-  - fontawesome
----
-```
-
 
 ## Development
 
