@@ -1,0 +1,60 @@
+---
+title: Countdown Demo
+format: revealjs
+---
+
+## Basic Countdown Timer
+
+5 minutes:
+
+{{< countdown minutes=5 >}}
+
+## Timer with Seconds
+
+2 minutes and 30 seconds:
+
+{{< countdown minutes=2 seconds=30 >}}
+
+## Auto-start Timer
+
+{{< countdown minutes=1 start_immediately=true >}}
+
+## Timer with Warning
+
+Warning state at 30 seconds remaining:
+
+{{< countdown minutes=2 warn_when=30 >}}
+
+## Timer with Sound
+
+{{< countdown minutes=1 play_sound=true >}}
+
+## Styled Timer
+
+{{< countdown minutes=3 font_size=4rem border_radius=20px >}}
+
+## Positioned Timer
+
+{{< countdown minutes=5 top=10px right=10px >}}
+
+## Colored Timer
+
+{{< countdown minutes=2 color_border=blue color_text=white color_background=navy >}}
+
+## Timer with State Colors
+
+{{< countdown minutes=1 color_running_background=green color_warning_background=orange color_finished_background=red >}}
+
+## Brand Colors (from _brand.yml)
+
+Using brand colors (hex values inserted): primary-blue, accent-orange
+
+{{< countdown minutes=2 color_border=#447099 color_background=#EE6331 >}}
+
+## Try Autocomplete
+
+1. Type `{{< countdown ` and press space to see attribute suggestions
+2. Type `{{< countdown mi` to filter to `minutes`
+3. After `play_sound=`, see `true`/`false` options
+4. After `color_border=`, see brand colors (if _brand.yml exists) and CSS colors
+5. Attributes are grouped: Timer, Position, Style, Color

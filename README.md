@@ -8,6 +8,7 @@ VS Code extension providing autocomplete and editor support for popular Quarto e
 
 - [roughnotation](https://github.com/EmilHvitfeldt/quarto-roughnotation)
 - [fontawesome](https://github.com/quarto-ext/fontawesome)
+- [countdown](https://github.com/gadenbuie/countdown)
 
 ## Installation
 
@@ -105,6 +106,73 @@ Start typing to filter icons by name:
 - Type `th` to see icons like `thumbs-up`, `theater-masks`, `thermometer`
 - Type `brands g` to see brand icons like `brands github`, `brands google`
 
+### Countdown
+
+Provides intelligent autocomplete for [countdown](https://github.com/gadenbuie/countdown) timer shortcodes.
+
+#### Attribute Autocomplete
+
+Type inside `{{< countdown ... >}}` shortcodes to get suggestions for all countdown attributes:
+
+<!-- TODO: Add gif showing attribute autocomplete -->
+
+**Timer attributes:**
+- `minutes` - Duration in minutes
+- `seconds` - Duration in seconds
+- `play_sound` - Play fanfare on completion
+- `start_immediately` - Auto-start timer when slide appears
+- `warn_when` - Seconds remaining to trigger warning state
+- `update_every` - Update frequency in seconds
+- `blink_colon` - Blinking colon effect
+
+**Position attributes:**
+- `top`, `bottom`, `left`, `right` - Position from edges (e.g., "10px", "1em")
+
+**Style attributes:**
+- `font_size` - Timer text size (default: "3rem")
+- `margin` - Spacing around timer
+- `padding` - Internal spacing
+- `border_width` - Border thickness
+- `border_radius` - Corner rounding
+- `line_height` - Text line spacing
+- `box_shadow` - Shadow effect
+- `id` - Unique identifier for custom CSS
+
+**Color attributes:**
+- `color_border`, `color_text`, `color_background` - Base colors
+- `color_running_*` - Running state colors (background, border, text)
+- `color_finished_*` - Completion state colors
+- `color_warning_*` - Warning state colors
+
+#### Value Autocomplete
+
+After typing an attribute name and `=`, get suggestions for valid values:
+
+- Boolean attributes (`play_sound`, `start_immediately`, `blink_colon`) show `true`/`false`
+- Color attributes show brand colors (if `_brand.yml` exists) and common CSS colors
+
+#### Brand Color Integration
+
+If your project has a `_brand.yml` file, brand colors appear first in color attribute suggestions:
+
+```yaml
+# _brand.yml
+color:
+  palette:
+    primary-blue: "#447099"
+    accent-orange: "#EE6331"
+```
+
+When you select a brand color, the hex value is inserted (since countdown doesn't understand brand color names).
+
+**Examples:**
+```markdown
+{{< countdown minutes=5 >}}
+{{< countdown minutes=2 seconds=30 warn_when=30 >}}
+{{< countdown minutes=1 play_sound=true start_immediately=true >}}
+{{< countdown minutes=3 color_border=blue color_background=navy >}}
+```
+
 ## Requirements
 
 - VS Code 1.85.0 or higher
@@ -177,3 +245,4 @@ MIT - see [LICENSE](LICENSE) for details.
 - [Quarto](https://quarto.org/) - Open-source scientific and technical publishing
 - [Rough Notation](https://roughnotation.com/) - Library for creating sketch-style annotations
 - [FontAwesome](https://fontawesome.com/) - Icon library
+- [Countdown](https://pkg.garrickadenbuie.com/countdown/) - Countdown timers for presentations

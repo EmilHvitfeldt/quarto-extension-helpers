@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 // Import providers from each Quarto extension helper
 import { RoughNotationCompletionProvider, RoughNotationColorProvider } from './roughnotation';
 import { FontAwesomeCompletionProvider } from './fontawesome';
+import { CountdownCompletionProvider } from './countdown';
 
 export function activate(context: vscode.ExtensionContext): void {
   const quartoSelector: vscode.DocumentSelector = { language: 'quarto', scheme: 'file' };
@@ -13,6 +14,9 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Register fontawesome provider
   registerFontAwesomeProvider(context, quartoSelector);
+
+  // Register countdown provider
+  registerCountdownProvider(context, quartoSelector);
 }
 
 /**
@@ -58,6 +62,26 @@ function registerFontAwesomeProvider(
   const provider = new FontAwesomeCompletionProvider();
   // Trigger on space (after "fa" or icon name), '<' (after {{), and '=' (for attribute values)
   const triggerCharacters = [' ', '<', '='];
+
+  context.subscriptions.push(
+    vscode.languages.registerCompletionItemProvider(
+      selector,
+      provider,
+      ...triggerCharacters
+    )
+  );
+}
+
+/**
+ * Register countdown autocomplete provider
+ */
+function registerCountdownProvider(
+  context: vscode.ExtensionContext,
+  selector: vscode.DocumentSelector
+): void {
+  const provider = new CountdownCompletionProvider();
+  // Trigger on space (after "countdown"), '=' (for attribute values)
+  const triggerCharacters = [' ', '='];
 
   context.subscriptions.push(
     vscode.languages.registerCompletionItemProvider(

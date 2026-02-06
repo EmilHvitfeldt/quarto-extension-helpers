@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Countdown support:**
+  - Autocomplete for countdown timer shortcodes (`{{< countdown ... >}}`)
+  - Timer attributes: `minutes`, `seconds`, `play_sound`, `start_immediately`, `warn_when`, `update_every`, `blink_colon`
+  - Position attributes: `top`, `bottom`, `left`, `right`
+  - Style attributes: `font_size`, `margin`, `padding`, `border_width`, `border_radius`, `line_height`, `box_shadow`, `id`
+  - Color attributes for base, running, warning, and finished states
+  - Boolean value suggestions (`true`/`false`)
+  - Brand color integration from `_brand.yml` for color attributes
+  - Common CSS color suggestions
+
 ## [0.1.0] - YYYY-MM-DD
 
 ### Added

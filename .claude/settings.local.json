@@ -9,7 +9,8 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:gist.github.com)",
       "WebFetch(domain:gist.githubusercontent.com)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "WebFetch(domain:pkg.garrickadenbuie.com)"
     ]
   }
 }

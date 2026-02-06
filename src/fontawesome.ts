@@ -361,7 +361,8 @@ export class FontAwesomeCompletionProvider implements vscode.CompletionItemProvi
         };
       } else {
         // For free-form attributes like title, add ="" with cursor inside
-        item.insertText = new vscode.SnippetString(`${attr.name}="\$1" `);
+        const trailingSpace = context.hasSpaceBeforeEnd ? '' : ' ';
+        item.insertText = new vscode.SnippetString(`${attr.name}="\$1"${trailingSpace}`);
       }
 
       completions.push(item);
