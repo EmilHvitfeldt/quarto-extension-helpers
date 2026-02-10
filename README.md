@@ -29,7 +29,7 @@ Provides intelligent autocomplete for [quarto-roughnotation](https://github.com/
 
 Type inside `{.rn-fragment }` or `{.rn }` spans to get suggestions for all roughnotation attributes:
 
-<!-- TODO: Add gif showing attribute autocomplete -->
+![](images/rn-attribute.gif)
 
 **Supported attributes:**
 - `rn-type` - Annotation type (highlight, underline, box, circle, strike-through, crossed-off, bracket)
@@ -47,19 +47,19 @@ Type inside `{.rn-fragment }` or `{.rn }` spans to get suggestions for all rough
 
 After typing an attribute name and `=`, get suggestions for valid values:
 
-<!-- TODO: Add gif showing value autocomplete for rn-type -->
+![](images/rn-options.gif)
 
 #### Color Picker
 
 Click the color swatch next to any `rn-color` value to open VS Code's native color picker:
 
-<!-- TODO: Add gif showing color picker -->
+![](images/rn-colorpicker.gif)
 
 #### Brand Color Integration
 
 If your project has a `_brand.yml` file with a color palette, those colors appear first in `rn-color` suggestions:
 
-<!-- TODO: Add screenshot showing brand colors in autocomplete -->
+![](images/rn-brandcolors.gif)
 
 ```yaml
 # _brand.yml
@@ -79,7 +79,7 @@ Provides intelligent autocomplete for [quarto-fontawesome](https://github.com/qu
 
 Type inside `{{< fa ... >}}` shortcodes to get suggestions for all FontAwesome 6 free icons:
 
-<!-- TODO: Add gif showing icon autocomplete -->
+![](images/fontawesome.gif)
 
 **Supported icon types:**
 - Regular icons: `{{< fa thumbs-up >}}`
@@ -114,7 +114,7 @@ Provides intelligent autocomplete for [countdown](https://github.com/gadenbuie/c
 
 Type inside `{{< countdown ... >}}` shortcodes to get suggestions for all countdown attributes:
 
-<!-- TODO: Add gif showing attribute autocomplete -->
+![](images/countdown.gif)
 
 **Timer attributes:**
 - `minutes` - Duration in minutes
