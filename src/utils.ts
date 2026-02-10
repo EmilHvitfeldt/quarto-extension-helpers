@@ -80,7 +80,8 @@ export interface BrandColor {
 const brandColorCache = new Map<string, { colors: BrandColor[]; mtime: number }>();
 
 /**
- * Get brand colors from _brand.yml in the document's workspace.
+ * Get brand colors from _brand.yml in the document's directory or ancestor directories.
+ * Searches from the document's directory up to the workspace root.
  * Returns an array of color names and their hex values.
  */
 export async function getBrandColors(document: vscode.TextDocument): Promise<BrandColor[]> {
@@ -89,7 +90,11 @@ export async function getBrandColors(document: vscode.TextDocument): Promise<Bra
     return [];
   }
 
-  const brandFile = vscode.Uri.joinPath(workspaceFolder.uri, '_brand.yml');
+  // Find _brand.yml by walking up from the document's directory
+  const brandFile = await findBrandFile(document.uri, workspaceFolder.uri);
+  if (!brandFile) {
+    return [];
+  }
 
   try {
     const stat = await vscode.workspace.fs.stat(brandFile);
@@ -111,6 +116,35 @@ export async function getBrandColors(document: vscode.TextDocument): Promise<Bra
     // File doesn't exist or can't be read
     return [];
   }
+}
+
+/**
+ * Find _brand.yml by searching from the document's directory up to workspace root
+ */
+async function findBrandFile(documentUri: vscode.Uri, workspaceUri: vscode.Uri): Promise<vscode.Uri | null> {
+  // Start from the document's directory
+  let currentDir = vscode.Uri.joinPath(documentUri, '..');
+  const workspacePath = workspaceUri.path;
+
+  while (currentDir.path.startsWith(workspacePath) || currentDir.path === workspacePath) {
+    const brandFile = vscode.Uri.joinPath(currentDir, '_brand.yml');
+    try {
+      await vscode.workspace.fs.stat(brandFile);
+      return brandFile;
+    } catch {
+      // File doesn't exist, try parent directory
+    }
+
+    // Move to parent directory
+    const parentDir = vscode.Uri.joinPath(currentDir, '..');
+    if (parentDir.path === currentDir.path) {
+      // Reached filesystem root
+      break;
+    }
+    currentDir = parentDir;
+  }
+
+  return null;
 }
 
 /**
