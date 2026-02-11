@@ -116,13 +116,6 @@ After typing an icon name, get suggestions for attributes:
 {{< fa brands github size=5x title="Visit GitHub" >}}
 ```
 
-#### Filtering
-
-Start typing to filter icons by name:
-
-- Type `th` to see icons like `thumbs-up`, `theater-masks`, `thermometer`
-- Type `brands g` to see brand icons like `brands github`, `brands google`
-
 ### Countdown
 
 Provides intelligent autocomplete for [countdown](https://github.com/gadenbuie/countdown) timer shortcodes.
