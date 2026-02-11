@@ -109,7 +109,19 @@ For **shortcode-based extensions** (see `src/countdown.ts`):
 - `getAttributeValueCompletions(...)` - Generate attribute value completion items
 - Note: No filter detection needed - shortcode syntax (`{{< name`) is distinctive
 
-### 3. Register in extension.ts
+### 3. Add Configuration Setting
+
+Add a setting to `package.json` under `contributes.configuration.properties` to allow users to enable/disable the extension:
+
+```json
+"quartoExtensionHelpers.<extension-name>.enabled": {
+  "type": "boolean",
+  "default": true,
+  "description": "Enable autocomplete support for the <extension-name> extension"
+}
+```
+
+### 4. Register in extension.ts
 
 Add import and registration in `src/extension.ts`:
 
@@ -118,10 +130,12 @@ import { <ExtensionName>CompletionProvider } from './<extension-name>';
 // If has colors:
 import { <ExtensionName>CompletionProvider, <ExtensionName>ColorProvider } from './<extension-name>';
 
-// In activate():
-register<ExtensionName>Provider(context, quartoSelector);
-// If has colors:
-register<ExtensionName>ColorProvider(context, quartoSelector);
+// In activate(), wrap registration in config check:
+if (config.get<boolean>('<extension-name>.enabled', true)) {
+  register<ExtensionName>Provider(context, quartoSelector);
+  // If has colors:
+  register<ExtensionName>ColorProvider(context, quartoSelector);
+}
 
 // Add registration function:
 function register<ExtensionName>Provider(
@@ -155,7 +169,7 @@ function register<ExtensionName>ColorProvider(
 }
 ```
 
-### 4. Create Example Files
+### 5. Create Example Files
 
 Create an extension-specific example folder with demo files.
 
@@ -231,7 +245,7 @@ title: <Extension Name> Demo
 2. After `attr=`, see available values
 ```
 
-### 5. Update Documentation (MANDATORY)
+### 6. Update Documentation (MANDATORY)
 
 **IMPORTANT**: Documentation updates are required for every new extension. Do not skip this step.
 
@@ -300,16 +314,17 @@ Add a detailed entry under `[Unreleased]`:
   - <List special features like boolean values, color suggestions, brand colors>
 ```
 
-### 6. Compile and Verify
+### 7. Compile and Verify
 
 Run `npm run compile` to verify there are no TypeScript errors.
 
-### 7. Final Checklist
+### 8. Final Checklist
 
 Before completing, verify all items:
 
 - [ ] `src/<extension-name>.ts` created with CompletionProvider
-- [ ] Provider registered in `src/extension.ts`
+- [ ] Configuration setting added to `package.json` (`quartoExtensionHelpers.<extension-name>.enabled`)
+- [ ] Provider registered in `src/extension.ts` with config check
 - [ ] Example folder created at `examples/<extension-name>/`
 - [ ] Demo file(s) created showing all features
 - [ ] `README.md` updated:

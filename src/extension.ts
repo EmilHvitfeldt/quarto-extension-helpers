@@ -7,16 +7,23 @@ import { CountdownCompletionProvider } from './countdown';
 
 export function activate(context: vscode.ExtensionContext): void {
   const quartoSelector: vscode.DocumentSelector = { language: 'quarto', scheme: 'file' };
+  const config = vscode.workspace.getConfiguration('quartoExtensionHelpers');
 
   // Register roughnotation providers
-  registerRoughNotationProvider(context, quartoSelector);
-  registerRoughNotationColorProvider(context, quartoSelector);
+  if (config.get<boolean>('roughnotation.enabled', true)) {
+    registerRoughNotationProvider(context, quartoSelector);
+    registerRoughNotationColorProvider(context, quartoSelector);
+  }
 
   // Register fontawesome provider
-  registerFontAwesomeProvider(context, quartoSelector);
+  if (config.get<boolean>('fontawesome.enabled', true)) {
+    registerFontAwesomeProvider(context, quartoSelector);
+  }
 
   // Register countdown provider
-  registerCountdownProvider(context, quartoSelector);
+  if (config.get<boolean>('countdown.enabled', true)) {
+    registerCountdownProvider(context, quartoSelector);
+  }
 }
 
 /**

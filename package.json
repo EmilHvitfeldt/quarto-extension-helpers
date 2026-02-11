@@ -51,7 +51,27 @@
         "extensions": [".qmd"],
         "aliases": ["Quarto", "quarto"]
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Quarto Extension Helpers",
+      "properties": {
+        "quartoExtensionHelpers.roughnotation.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable autocomplete support for the roughnotation extension"
+        },
+        "quartoExtensionHelpers.fontawesome.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable autocomplete support for the fontawesome extension"
+        },
+        "quartoExtensionHelpers.countdown.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable autocomplete support for the countdown extension"
+        }
+      }
+    }
   },
   "devDependencies": {
     "@types/node": "^20.x",

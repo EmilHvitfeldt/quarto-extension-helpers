@@ -19,6 +19,23 @@ VS Code extension providing autocomplete and editor support for popular Quarto e
 3. Search for "Quarto Extension Helpers"
 4. Click Install
 
+## Configuration
+
+Each extension's autocomplete support can be individually enabled or disabled via VS Code settings. All extensions are enabled by default.
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `quartoExtensionHelpers.roughnotation.enabled` | `true` | Enable/disable roughnotation autocomplete |
+| `quartoExtensionHelpers.fontawesome.enabled` | `true` | Enable/disable fontawesome autocomplete |
+| `quartoExtensionHelpers.countdown.enabled` | `true` | Enable/disable countdown autocomplete |
+
+To change these settings:
+1. Open VS Code Settings (Ctrl+, / Cmd+,)
+2. Search for "Quarto Extension Helpers"
+3. Toggle the extensions you want to enable/disable
+
+**Note:** Changes require reloading VS Code to take effect.
+
 ## Extension Support
 
 ### Roughnotation
