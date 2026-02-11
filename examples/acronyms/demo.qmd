@@ -1,0 +1,52 @@
+---
+title: Acronyms Demo
+filters:
+  - acronyms
+acronyms:
+  keys:
+    - shortname: qmd
+      longname: Quarto Markdown Document
+    - shortname: YAML
+      longname: YAML Ain't Markup Language
+    - shortname: HTML
+      longname: HyperText Markup Language
+    - shortname: CSS
+      longname: Cascading Style Sheets
+    - shortname: API
+      longname: Application Programming Interface
+    - shortname: CLI
+      longname: Command Line Interface
+---
+
+## Autocomplete Demo
+
+This document demonstrates autocomplete for the acronyms extension.
+
+### Basic Usage
+
+Type `{{< acr ` and press space to see suggestions for defined acronyms.
+
+{{< acr qmd >}} files use {{< acr YAML >}} frontmatter.
+
+### Try Autocomplete
+
+1. Position your cursor inside `{{< acr  >}}` below
+2. Press `Ctrl+Space` or start typing to see acronym suggestions
+3. Each suggestion shows the shortname and its longname
+
+{{< acr  >}}
+
+### All Defined Acronyms
+
+The following acronyms are defined in this document's frontmatter:
+
+- {{< acr qmd >}} - Quarto Markdown Document
+- {{< acr YAML >}} - YAML Ain't Markup Language
+- {{< acr HTML >}} - HyperText Markup Language
+- {{< acr CSS >}} - Cascading Style Sheets
+- {{< acr API >}} - Application Programming Interface
+- {{< acr CLI >}} - Command Line Interface
+
+### How It Works
+
+The extension reads the `acronyms.keys` section from your document's YAML frontmatter and provides autocomplete suggestions based on the `shortname` values you've defined.

@@ -5,6 +5,7 @@ import { RoughNotationCompletionProvider, RoughNotationColorProvider } from './r
 import { FontAwesomeCompletionProvider } from './fontawesome';
 import { CountdownCompletionProvider } from './countdown';
 import { DownloadthisCompletionProvider } from './downloadthis';
+import { AcronymsCompletionProvider } from './acronyms';
 
 export function activate(context: vscode.ExtensionContext): void {
   const quartoSelector: vscode.DocumentSelector = { language: 'quarto', scheme: 'file' };
@@ -29,6 +30,11 @@ export function activate(context: vscode.ExtensionContext): void {
   // Register downloadthis provider
   if (config.get<boolean>('downloadthis.enabled', true)) {
     registerDownloadthisProvider(context, quartoSelector);
+  }
+
+  // Register acronyms provider
+  if (config.get<boolean>('acronyms.enabled', true)) {
+    registerAcronymsProvider(context, quartoSelector);
   }
 }
 
@@ -115,6 +121,26 @@ function registerDownloadthisProvider(
   const provider = new DownloadthisCompletionProvider();
   // Trigger on space (after "downloadthis"), '=' (for attribute values)
   const triggerCharacters = [' ', '='];
+
+  context.subscriptions.push(
+    vscode.languages.registerCompletionItemProvider(
+      selector,
+      provider,
+      ...triggerCharacters
+    )
+  );
+}
+
+/**
+ * Register acronyms autocomplete provider
+ */
+function registerAcronymsProvider(
+  context: vscode.ExtensionContext,
+  selector: vscode.DocumentSelector
+): void {
+  const provider = new AcronymsCompletionProvider();
+  // Trigger on space (after "acr")
+  const triggerCharacters = [' '];
 
   context.subscriptions.push(
     vscode.languages.registerCompletionItemProvider(

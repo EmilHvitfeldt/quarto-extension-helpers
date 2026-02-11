@@ -10,6 +10,7 @@ VS Code extension providing autocomplete and editor support for popular Quarto e
 - [fontawesome](https://github.com/quarto-ext/fontawesome)
 - [countdown](https://github.com/gadenbuie/countdown)
 - [downloadthis](https://github.com/shafayetShafee/downloadthis)
+- [acronyms](https://github.com/rchaput/acronyms)
 
 ## Installation
 
@@ -30,6 +31,7 @@ Each extension's autocomplete support can be individually enabled or disabled vi
 | `quartoExtensionHelpers.fontawesome.enabled` | `true` | Enable/disable fontawesome autocomplete |
 | `quartoExtensionHelpers.countdown.enabled` | `true` | Enable/disable countdown autocomplete |
 | `quartoExtensionHelpers.downloadthis.enabled` | `true` | Enable/disable downloadthis autocomplete |
+| `quartoExtensionHelpers.acronyms.enabled` | `true` | Enable/disable acronyms autocomplete |
 
 To change these settings:
 1. Open VS Code Settings (Ctrl+, / Cmd+,)
@@ -222,6 +224,37 @@ After typing `type=`, get suggestions for button styles:
 {{< downloadthis results.xlsx icon=file-earmark-spreadsheet type=success >}}
 ```
 
+### Acronyms
+
+Provides intelligent autocomplete for [acronyms](https://github.com/rchaput/acronyms) shortcodes.
+
+#### Shortname Autocomplete
+
+Type inside `{{< acr ... >}}` shortcodes to get suggestions for acronyms defined in your document's frontmatter:
+
+<!-- TODO: Add gif showing acronym autocomplete -->
+
+The extension reads acronym definitions from the `acronyms.keys` section of your YAML frontmatter:
+
+```yaml
+acronyms:
+  keys:
+    - shortname: qmd
+      longname: Quarto Markdown Document
+    - shortname: YAML
+      longname: YAML Ain't Markup Language
+```
+
+Each completion item shows:
+- The shortname (what you type)
+- The longname (shown as detail)
+
+**Examples:**
+```markdown
+{{< acr qmd >}} files use {{< acr YAML >}} frontmatter.
+{{< acr HTML >}} and {{< acr CSS >}} for styling.
+```
+
 ## Requirements
 
 - VS Code 1.85.0 or higher
@@ -296,3 +329,4 @@ MIT - see [LICENSE](LICENSE) for details.
 - [FontAwesome](https://fontawesome.com/) - Icon library
 - [Countdown](https://pkg.garrickadenbuie.com/countdown/) - Countdown timers for presentations
 - [Downloadthis](https://github.com/shafayetShafee/downloadthis) - Download buttons for embedded files
+- [Acronyms](https://github.com/rchaput/acronyms) - Acronym management for Quarto documents

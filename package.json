@@ -30,8 +30,7 @@
     "qmd",
     "roughnotation",
     "downloadthis",
-    "autocomplete",
-    "markdown"
+    "autocomplete"
   ],
   "activationEvents": [
     "onLanguage:quarto"
@@ -76,6 +75,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable autocomplete support for the downloadthis extension"
+        },
+        "quartoExtensionHelpers.acronyms.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable autocomplete support for the acronyms extension"
         }
       }
     }

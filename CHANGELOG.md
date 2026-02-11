@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Acronyms support:**
+  - Autocomplete for acronyms shortcodes (`{{< acr KEY >}}`)
+  - Reads acronym definitions from document frontmatter (`acronyms.keys`)
+  - Shows shortname with longname as detail
+  - Preserves definition order in suggestions
+  - Caches acronym definitions per document version for performance
+
 - **Downloadthis support:**
   - Autocomplete for downloadthis shortcodes (`{{< downloadthis ... >}}`)
   - File path completion from current document's directory
