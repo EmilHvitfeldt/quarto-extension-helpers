@@ -29,6 +29,7 @@
     "quarto",
     "qmd",
     "roughnotation",
+    "downloadthis",
     "autocomplete",
     "markdown"
   ],
@@ -70,6 +71,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable autocomplete support for the countdown extension"
+        },
+        "quartoExtensionHelpers.downloadthis.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable autocomplete support for the downloadthis extension"
         }
       }
     }

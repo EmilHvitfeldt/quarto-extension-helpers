@@ -1,0 +1,65 @@
+---
+title: Downloadthis Demo
+format: html
+---
+
+## Basic Download Button
+
+Download a CSV file:
+
+{{< downloadthis data.csv >}}
+
+## Custom Filename
+
+Download with a custom filename:
+
+{{< downloadthis data.csv dname=my-dataset >}}
+
+## Custom Label
+
+{{< downloadthis data.csv label="Get the Data" >}}
+
+## Custom Icon
+
+Using a different Bootstrap icon:
+
+{{< downloadthis data.csv icon=file-earmark-arrow-down >}}
+
+## Button Types
+
+Default style:
+
+{{< downloadthis data.csv type=default >}}
+
+Primary style:
+
+{{< downloadthis data.csv type=primary >}}
+
+Success style:
+
+{{< downloadthis data.csv type=success >}}
+
+Warning style:
+
+{{< downloadthis data.csv type=warning >}}
+
+Danger style:
+
+{{< downloadthis data.csv type=danger >}}
+
+## Combined Options
+
+{{< downloadthis data.csv dname=sample-data label="Download Sample" type=primary icon=cloud-download >}}
+
+## With Custom Class and ID
+
+{{< downloadthis data.csv class=my-download-btn id=main-download >}}
+
+## Try Autocomplete
+
+1. Type `{{< downloadthis ` to see file suggestions from the current directory
+2. Type `{{< downloadthis data/` to browse into subdirectories
+3. After selecting a file, press space to see attribute suggestions
+4. Type `dn` to filter to `dname`
+5. After `type=`, see available button style options
+6. Attributes show defaults and descriptions in the completion popup

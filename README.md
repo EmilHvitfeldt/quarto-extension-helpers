@@ -9,6 +9,7 @@ VS Code extension providing autocomplete and editor support for popular Quarto e
 - [roughnotation](https://github.com/EmilHvitfeldt/quarto-roughnotation)
 - [fontawesome](https://github.com/quarto-ext/fontawesome)
 - [countdown](https://github.com/gadenbuie/countdown)
+- [downloadthis](https://github.com/shafayetShafee/downloadthis)
 
 ## Installation
 
@@ -28,6 +29,7 @@ Each extension's autocomplete support can be individually enabled or disabled vi
 | `quartoExtensionHelpers.roughnotation.enabled` | `true` | Enable/disable roughnotation autocomplete |
 | `quartoExtensionHelpers.fontawesome.enabled` | `true` | Enable/disable fontawesome autocomplete |
 | `quartoExtensionHelpers.countdown.enabled` | `true` | Enable/disable countdown autocomplete |
+| `quartoExtensionHelpers.downloadthis.enabled` | `true` | Enable/disable downloadthis autocomplete |
 
 To change these settings:
 1. Open VS Code Settings (Ctrl+, / Cmd+,)
@@ -183,6 +185,43 @@ When you select a brand color, the hex value is inserted (since countdown doesn'
 {{< countdown minutes=3 color_border=blue color_background=navy >}}
 ```
 
+### Downloadthis
+
+Provides intelligent autocomplete for [downloadthis](https://github.com/shafayetShafee/downloadthis) download button shortcodes.
+
+#### File Path Autocomplete
+
+Type inside `{{< downloadthis ... >}}` shortcodes to get file suggestions from the current directory:
+
+- Shows files and folders relative to your document
+- Navigate into subdirectories by selecting a folder
+- Hidden files (starting with `.`) are excluded
+
+#### Attribute Autocomplete
+
+After selecting a file, get suggestions for all downloadthis attributes:
+
+- `dname` - Filename for the downloaded file (without extension)
+- `label` - Text displayed on the button (default: "Download")
+- `icon` - Bootstrap Icon name (default: "download")
+- `type` - Button style variant
+- `class` - CSS class for the button
+- `id` - CSS identifier for the button
+
+#### Value Autocomplete
+
+After typing `type=`, get suggestions for button styles:
+
+- `default`, `primary`, `secondary`, `success`, `warning`, `danger`, `info`, `light`, `dark`
+
+**Examples:**
+```markdown
+{{< downloadthis data.csv >}}
+{{< downloadthis report.pdf dname=annual-report >}}
+{{< downloadthis data.csv label="Get the Data" type=primary >}}
+{{< downloadthis results.xlsx icon=file-earmark-spreadsheet type=success >}}
+```
+
 ## Requirements
 
 - VS Code 1.85.0 or higher
@@ -256,3 +295,4 @@ MIT - see [LICENSE](LICENSE) for details.
 - [Rough Notation](https://roughnotation.com/) - Library for creating sketch-style annotations
 - [FontAwesome](https://fontawesome.com/) - Icon library
 - [Countdown](https://pkg.garrickadenbuie.com/countdown/) - Countdown timers for presentations
+- [Downloadthis](https://github.com/shafayetShafee/downloadthis) - Download buttons for embedded files

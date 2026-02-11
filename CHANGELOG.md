@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Downloadthis support:**
+  - Autocomplete for downloadthis shortcodes (`{{< downloadthis ... >}}`)
+  - File path completion from current document's directory
+  - Directory navigation with automatic re-triggering
+  - Attributes: `dname`, `label`, `icon`, `type`, `class`, `id`
+  - Button type value suggestions (`default`, `primary`, `secondary`, `success`, `warning`, `danger`, `info`, `light`, `dark`)
+  - Quoted value insertion for `label` attribute
+
 - **Countdown support:**
   - Autocomplete for countdown timer shortcodes (`{{< countdown ... >}}`)
   - Timer attributes: `minutes`, `seconds`, `play_sound`, `start_immediately`, `warn_when`, `update_every`, `blink_colon`

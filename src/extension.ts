@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import { RoughNotationCompletionProvider, RoughNotationColorProvider } from './roughnotation';
 import { FontAwesomeCompletionProvider } from './fontawesome';
 import { CountdownCompletionProvider } from './countdown';
+import { DownloadthisCompletionProvider } from './downloadthis';
 
 export function activate(context: vscode.ExtensionContext): void {
   const quartoSelector: vscode.DocumentSelector = { language: 'quarto', scheme: 'file' };
@@ -23,6 +24,11 @@ export function activate(context: vscode.ExtensionContext): void {
   // Register countdown provider
   if (config.get<boolean>('countdown.enabled', true)) {
     registerCountdownProvider(context, quartoSelector);
+  }
+
+  // Register downloadthis provider
+  if (config.get<boolean>('downloadthis.enabled', true)) {
+    registerDownloadthisProvider(context, quartoSelector);
   }
 }
 
@@ -88,6 +94,26 @@ function registerCountdownProvider(
 ): void {
   const provider = new CountdownCompletionProvider();
   // Trigger on space (after "countdown"), '=' (for attribute values)
+  const triggerCharacters = [' ', '='];
+
+  context.subscriptions.push(
+    vscode.languages.registerCompletionItemProvider(
+      selector,
+      provider,
+      ...triggerCharacters
+    )
+  );
+}
+
+/**
+ * Register downloadthis autocomplete provider
+ */
+function registerDownloadthisProvider(
+  context: vscode.ExtensionContext,
+  selector: vscode.DocumentSelector
+): void {
+  const provider = new DownloadthisCompletionProvider();
+  // Trigger on space (after "downloadthis"), '=' (for attribute values)
   const triggerCharacters = [' ', '='];
 
   context.subscriptions.push(
