@@ -7,27 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2025-02-13
+
 ### Added
 
-- **Now support:**
-  - Autocomplete for now shortcodes (`{{< now ALIAS >}}`)
-    - Supported Aliases: `year`, `month`, `day`, `weekday`, `date`, `isodate`, `hour`, `minute`, `ampm`, `time`, `isotime`, `datetime`, `isodatetime`, and `timestamp`.
+- **Roughnotation support:**
+  - Autocomplete for all roughnotation attributes (`rn-type`, `rn-color`, `rn-animate`, etc.)
+  - Value suggestions for enum attributes (annotation types, bracket positions, booleans)
+  - VS Code color picker integration for `rn-color`
+  - Brand color support from `_brand.yml` palette
+  - Automatic trigger after attribute completion
+  - Filter-aware activation (only enables when `roughnotation` is in frontmatter)
 
-
-- **Acronyms support:**
-  - Autocomplete for acronyms shortcodes (`{{< acr KEY >}}`)
-  - Reads acronym definitions from document frontmatter (`acronyms.keys`)
-  - Shows shortname with longname as detail
-  - Preserves definition order in suggestions
-  - Caches acronym definitions per document version for performance
-
-- **Downloadthis support:**
-  - Autocomplete for downloadthis shortcodes (`{{< downloadthis ... >}}`)
-  - File path completion from current document's directory
-  - Directory navigation with automatic re-triggering
-  - Attributes: `dname`, `label`, `icon`, `type`, `class`, `id`
-  - Button type value suggestions (`default`, `primary`, `secondary`, `success`, `warning`, `danger`, `info`, `light`, `dark`)
-  - Quoted value insertion for `label` attribute
+- **FontAwesome support:**
+  - Autocomplete for FontAwesome 6 free icons in `{{< fa ... >}}` shortcodes
+  - Support for regular icons (e.g., `thumbs-up`, `arrow-right`)
+  - Support for brand icons (e.g., `brands github`, `brands twitter`)
+  - Attribute autocomplete for `size` and `title`
+  - Size value suggestions (relative, literal, and LaTeX sizing)
 
 - **Countdown support:**
   - Autocomplete for countdown timer shortcodes (`{{< countdown ... >}}`)
@@ -39,21 +36,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Brand color integration from `_brand.yml` for color attributes
   - Common CSS color suggestions
 
-## [0.1.0] - YYYY-MM-DD
+- **Downloadthis support:**
+  - Autocomplete for downloadthis shortcodes (`{{< downloadthis ... >}}`)
+  - File path completion from current document's directory
+  - Directory navigation with automatic re-triggering
+  - Attributes: `dname`, `label`, `icon`, `type`, `class`, `id`
+  - Button type value suggestions (`default`, `primary`, `secondary`, `success`, `warning`, `danger`, `info`, `light`, `dark`)
+  - Quoted value insertion for `label` attribute
 
-### Added
+- **Acronyms support:**
+  - Autocomplete for acronyms shortcodes (`{{< acr KEY >}}`)
+  - Reads acronym definitions from document frontmatter (`acronyms.keys`)
+  - Shows shortname with longname as detail
+  - Preserves definition order in suggestions
 
-- Initial release
-- **Roughnotation support:**
-  - Autocomplete for all roughnotation attributes (`rn-type`, `rn-color`, `rn-animate`, etc.)
-  - Value suggestions for enum attributes (annotation types, bracket positions, booleans)
-  - VS Code color picker integration for `rn-color`
-  - Brand color support from `_brand.yml` palette
-  - Automatic trigger after attribute completion
-  - Filter-aware activation (only enables when `roughnotation` is in frontmatter)
-- **FontAwesome support:**
-  - Autocomplete for FontAwesome 6 free icons in `{{< fa ... >}}` shortcodes
-  - Support for regular icons (e.g., `thumbs-up`, `arrow-right`)
-  - Support for brand icons (e.g., `brands github`, `brands twitter`)
-  - Attribute autocomplete for `size` and `title`
-  - Size value suggestions (relative, literal, and LaTeX sizing)
+- **Now support:**
+  - Autocomplete for now shortcodes (`{{< now ALIAS >}}`)
+  - Supported aliases: `year`, `month`, `day`, `weekday`, `date`, `isodate`, `hour`, `minute`, `ampm`, `time`, `isotime`, `datetime`, `isodatetime`, and `timestamp`
+
+### Infrastructure
+
+- YAML-based spec system for declarative shortcode definitions
+- Cross-platform build script for Windows compatibility
+- GitHub Actions CI pipeline for automated testing
+- 109 unit tests covering core functionality
+- Integration test infrastructure with VS Code Extension Host
