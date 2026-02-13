@@ -26,7 +26,7 @@ This document demonstrates autocomplete for the acronyms extension.
 
 Type `{{< acr ` and press space to see suggestions for defined acronyms.
 
-{{< acr qmd >}} files use {{< acr YAML >}} frontmatter.
+{{< acr CSS >}} files use {{< acr YAML >}} frontmatter.
 
 ### Try Autocomplete
 
