@@ -213,3 +213,82 @@ export function filterByPrefix(values: string[], typedText: string): string[] {
   const lowerTyped = typedText.toLowerCase();
   return values.filter((v) => v.toLowerCase().startsWith(lowerTyped));
 }
+
+/**
+ * Parse values from YAML frontmatter text.
+ * Extracts values from a nested key path (e.g., "acronyms.keys")
+ * and optionally extracts a specific field (valuePath) from each item.
+ *
+ * @param text - Full document text including frontmatter delimiters
+ * @param key - Dot-separated path to the data (e.g., "acronyms.keys")
+ * @param valuePath - Optional field to extract from each item (e.g., "shortname")
+ * @returns Array of parsed values with key and optional detail
+ */
+export function parseFrontmatterValues(
+  text: string,
+  key: string,
+  valuePath?: string
+): { key: string; detail?: string }[] {
+  const values: { key: string; detail?: string }[] = [];
+
+  if (!text.startsWith('---')) {
+    return values;
+  }
+
+  const endIndex = text.indexOf('---', 3);
+  if (endIndex === -1) {
+    return values;
+  }
+
+  const frontmatter = text.substring(3, endIndex);
+
+  // Simple YAML parsing for the specific key
+  // This handles patterns like "acronyms.keys"
+  const keyParts = key.split('.');
+  let currentIndent = 0;
+  let inTargetSection = false;
+  let sectionDepth = 0;
+
+  const lines = frontmatter.split('\n');
+
+  for (const line of lines) {
+    const trimmed = line.trimStart();
+    const indent = line.length - trimmed.length;
+
+    // Check for section headers
+    let matchedHeader = false;
+    for (let i = 0; i < keyParts.length; i++) {
+      const pattern = new RegExp(`^${keyParts[i]}:\\s*$`);
+      if (pattern.test(trimmed) && sectionDepth === i) {
+        sectionDepth++;
+        matchedHeader = true;
+        if (sectionDepth === keyParts.length) {
+          inTargetSection = true;
+          currentIndent = indent;
+        }
+        break;
+      }
+    }
+
+    // Skip further processing if we matched a header
+    if (matchedHeader) {
+      continue;
+    }
+
+    // Parse list items in target section
+    if (inTargetSection && indent > currentIndent) {
+      // Match "- shortname: value" or "shortname: value"
+      const valueKey = valuePath || 'shortname';
+      const pattern = new RegExp(`${valueKey}:\\s*["']?([^"'\\n]+)["']?`);
+      const match = trimmed.match(pattern);
+      if (match) {
+        values.push({ key: match[1].trim() });
+      }
+    } else if (inTargetSection && indent <= currentIndent && trimmed.length > 0) {
+      // Exited the section
+      break;
+    }
+  }
+
+  return values;
+}
