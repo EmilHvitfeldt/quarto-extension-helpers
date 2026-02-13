@@ -7,6 +7,8 @@ import { CountdownCompletionProvider } from './countdown';
 import { DownloadthisCompletionProvider } from './downloadthis';
 import { AcronymsCompletionProvider } from './acronyms';
 import { NowCompletionProvider } from './now';
+import { logger } from './logger';
+import { CONFIG } from './constants';
 
 /**
  * Provider registration configuration
@@ -73,9 +75,14 @@ const PROVIDERS: ProviderConfig[] = [
 ];
 
 export function activate(context: vscode.ExtensionContext): void {
-  const quartoSelector: vscode.DocumentSelector = { language: 'quarto', scheme: 'file' };
-  const config = vscode.workspace.getConfiguration('quartoExtensionHelpers');
+  // Initialize logger
+  logger.init(context);
+  logger.info('Quarto Extension Helpers activating...');
 
+  const quartoSelector: vscode.DocumentSelector = { language: 'quarto', scheme: 'file' };
+  const config = vscode.workspace.getConfiguration(CONFIG.ROOT);
+
+  let enabledCount = 0;
   for (const providerConfig of PROVIDERS) {
     if (config.get<boolean>(`${providerConfig.configKey}.enabled`, true)) {
       // Register the main completion provider
@@ -93,8 +100,13 @@ export function activate(context: vscode.ExtensionContext): void {
           additional.register(context, quartoSelector);
         }
       }
+
+      enabledCount++;
+      logger.debug(`Registered provider: ${providerConfig.configKey}`);
     }
   }
+
+  logger.info(`Activated with ${enabledCount} providers enabled`);
 }
 
 export function deactivate(): void {}

@@ -131,7 +131,7 @@ export class AcronymsCompletionProvider implements vscode.CompletionItemProvider
 
     for (const line of lines) {
       // Stop if we hit a line that's not indented enough (new section)
-      if (line.match(/^\S/) || line.match(/^  \S/)) {
+      if (line.match(/^\S/) || line.match(/^[ ]{2}\S/)) {
         break;
       }
 

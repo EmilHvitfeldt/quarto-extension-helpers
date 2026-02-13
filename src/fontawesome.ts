@@ -5,12 +5,22 @@ import {
   analyzeShortcodeContext,
   createReplaceRange,
   getUsedAttributes,
-  createEnumValueCompletions,
 } from './shortcode-provider';
-import { FONTAWESOME_ICONS } from './fontawesome-icons';
+import { SHORTCODE } from './constants';
 
 /** Shortcode name constant */
-const SHORTCODE_NAME = 'fa';
+const SHORTCODE_NAME = SHORTCODE.FONTAWESOME;
+
+/** Lazy-loaded FontAwesome icons */
+let fontAwesomeIcons: readonly string[] | null = null;
+
+function getIcons(): readonly string[] {
+  if (!fontAwesomeIcons) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    fontAwesomeIcons = require('./fontawesome-icons').getIcons();
+  }
+  return fontAwesomeIcons!;
+}
 
 /** Size values for FontAwesome icons (sortOrder controls display order) */
 const SIZE_VALUES = [
@@ -89,7 +99,7 @@ function hasIconSpecified(content: string): boolean {
     }
 
     // It's an icon if it's in our list or looks like an icon name (lowercase alphanumeric with hyphens)
-    return FONTAWESOME_ICONS.includes(potentialIcon as (typeof FONTAWESOME_ICONS)[number]) ||
+    return getIcons().includes(potentialIcon) ||
            /^[a-z][a-z0-9-]*$/i.test(potentialIcon);
   }
 
@@ -157,7 +167,7 @@ export class FontAwesomeCompletionProvider implements vscode.CompletionItemProvi
     const typedText = context.typedText;
     const replaceRange = createReplaceRange(position, context.tokenStart);
 
-    for (const icon of FONTAWESOME_ICONS) {
+    for (const icon of getIcons()) {
       // Filter by typed text (case-insensitive prefix match)
       if (typedText && !icon.toLowerCase().startsWith(typedText.toLowerCase())) {
         continue;

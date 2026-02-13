@@ -6,12 +6,7 @@ import {
   AttributeValueContext,
   BrandColor,
 } from './types';
-
-/** Common CSS color values for completion */
-export const CSS_COLOR_VALUES = [
-  'red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink',
-  'black', 'white', 'gray', 'cyan', 'magenta'
-];
+import { CSS_COLOR_NAMES } from './color-utils';
 
 /**
  * Parse shortcode context from a line of text.
@@ -405,7 +400,7 @@ export function createColorValueCompletions(
   }
 
   // Add CSS color values
-  for (const color of CSS_COLOR_VALUES) {
+  for (const color of CSS_COLOR_NAMES) {
     if (typedText && !color.toLowerCase().startsWith(typedText)) {
       continue;
     }

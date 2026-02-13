@@ -17,98 +17,108 @@ Reviews a Quarto extension helper for correctness, completeness, and best practi
 When the user runs this skill, perform a comprehensive review by reading:
 - `src/<extension-name>.ts`
 - `src/extension.ts`
-- `examples/<extension-name>/with-brandyml/demo.qmd`
-- `examples/<extension-name>/without-brandyml/demo.qmd`
+- `src/types.ts` (for type definitions)
+- `src/shortcode-provider.ts` (for shared utilities)
+- `src/constants.ts` (for constants)
+- `examples/<extension-name>/` folder
 - `README.md`
 - `CHANGELOG.md`
 
-### 1. Code Quality Checks
+### 1. Architecture Checks
+
+- [ ] Uses shared types from `src/types.ts` (`AttributeDefinition`, `ShortcodeContext`)
+- [ ] Uses shared utilities from `src/shortcode-provider.ts` where applicable
+- [ ] Uses constants from `src/constants.ts` for shortcode/filter names
+- [ ] Uses color utilities from `src/color-utils.ts` (if has color support)
+- [ ] No code duplication with other providers
+
+### 2. Code Quality Checks
 
 - [ ] TypeScript strict mode compliance (no `any` types, proper null checks)
 - [ ] Proper use of VS Code API types
 - [ ] Consistent code style with other extension files
 - [ ] JSDoc comments on exported classes
 - [ ] No unused imports or variables
-- [ ] Proper interface definitions (`<Prefix>Attribute`, `SpanContext`, `CompletionContext`)
+- [ ] Passes `npm run lint`
 
-### 2. Completion Provider Checks
+### 3. Completion Provider Checks
 
-- [ ] Uses `hasFilter(document, '<extension-name>')` to check filter is enabled
-- [ ] Properly detects span context (cursor inside `{...}` with correct class)
-- [ ] `isExtensionSpan()` method matches class at start or after whitespace (not inside attribute values)
+**For shortcode-based extensions:**
+- [ ] Uses `getShortcodeContext()` from shortcode-provider
+- [ ] Uses `analyzeShortcodeContext()` or `analyzeAttributeOnlyContext()` for context analysis
+- [ ] Uses `createAttributeNameCompletions()` for attribute suggestions
+- [ ] Uses `createAttributeValueCompletions()` for value suggestions
+
+**For span-based extensions:**
+- [ ] Uses `hasFilter(document, 'filter-name')` to check filter is enabled
+- [ ] Custom span context detection works correctly
+- [ ] Uses shared helpers where possible (`getUsedAttributes`, `createReplaceRange`, etc.)
+
+**General:**
 - [ ] Handles attribute name completions
 - [ ] Handles attribute value completions
-- [ ] Filters out already-used attributes via `getUsedAttributes()`
-- [ ] `getUsedAttributes()` matches attributes after whitespace (avoids partial matches)
-- [ ] Sets proper `CompletionItemKind`:
-  - `Property` for attribute names
-  - `Value` for attribute values
-  - `Color` for color values
-- [ ] Includes helpful `detail` and `documentation` on completion items
-- [ ] Uses `sortText` to order completions (brand colors first, then defaults)
-- [ ] Sets replacement `range` correctly (handles prefix like `rn-` replacement)
-- [ ] Handles `needsLeadingSpace` - adds space when completing directly after class
-- [ ] Uses `item.command` to trigger suggestions after attribute completion (for enum/boolean/color types)
-- [ ] `provideCompletionItems` is async if using brand colors
+- [ ] Filters out already-used attributes
+- [ ] Sets proper `CompletionItemKind` (Property, Value, Color)
+- [ ] Includes helpful `detail` and `documentation`
+- [ ] Uses `sortText` to order completions appropriately
+- [ ] Uses `item.command` to trigger suggestions after attribute completion
 
-### 3. Attribute Definition Checks
+### 4. Attribute Definition Checks
 
+- [ ] Uses `AttributeDefinition` type from `src/types.ts`
 - [ ] All documented extension attributes are included
 - [ ] Each attribute has correct `valueType`
 - [ ] Enum attributes have complete `values` arrays
-- [ ] Boolean attributes use `['true', 'false']` values
+- [ ] Boolean attributes have `defaultValue` of 'true' or 'false'
 - [ ] Number attributes have sensible `placeholder` values
-- [ ] `defaultValue` is set where applicable
+- [ ] `defaultValue` set where applicable
+- [ ] `category` set for organization (if using categories)
 - [ ] Descriptions are clear and helpful
-- [ ] Attributes array uses correct naming (`<PREFIX>_ATTRIBUTES`)
-- [ ] Map for O(1) lookup exists (`<PREFIX>_ATTRIBUTES_MAP`)
 
-### 4. Color Support Checks (if applicable)
+### 5. Color Support Checks (if applicable)
 
-- [ ] Color attributes integrate with brand colors from `_brand.yml`
-- [ ] `getBrandColors(document)` called for color attribute completions
-- [ ] Brand colors insert hex values (not names) since extensions don't understand brand names
-- [ ] Brand colors show name in label but hex in `insertText`
-- [ ] `DocumentColorProvider` implemented with:
-  - [ ] `provideDocumentColors()` - finds color values in document
-  - [ ] `provideColorPresentations()` - offers formats when using picker
-- [ ] Color provider is async
-- [ ] Parses multiple color formats (hex, rgb, rgba, named colors)
-- [ ] Color presentations include brand color name as reference (but insert hex)
+- [ ] Uses `getBrandColors(document)` from utils
+- [ ] Uses color utilities from `src/color-utils.ts` for parsing
+- [ ] Brand colors insert hex values (not names)
+- [ ] Brand colors show name in label
+- [ ] `DocumentColorProvider` implemented if interactive color picker is wanted
 
-### 5. Registration Checks
+### 6. Registration Checks
 
-- [ ] Completion provider is imported in `src/extension.ts`
-- [ ] Completion provider is registered with trigger characters: `[' ', '=', '-', '.']`
-- [ ] Color provider imported and registered (if applicable)
-- [ ] Uses `vscode.languages.registerColorProvider()` for colors
+- [ ] Provider added to `PROVIDERS` array in `src/extension.ts`
+- [ ] Uses data-driven registration (not separate function)
+- [ ] Correct `configKey` matching package.json setting
+- [ ] Appropriate `triggerCharacters` specified
+- [ ] Color provider registered via `additionalProviders` (if applicable)
 
-### 6. Documentation Checks
+### 7. Constants Checks
+
+- [ ] Shortcode name defined in `src/constants.ts` (or local constant)
+- [ ] Filter name defined in `src/constants.ts` (for span-based)
+- [ ] No magic strings scattered in code
+
+### 8. Documentation Checks
 
 - [ ] Extension added to README.md supported extensions list
 - [ ] Extension has dedicated section in README.md
-- [ ] Section includes TODO comments for screenshots/gifs
+- [ ] Section includes TODO comments for screenshots/gifs (or actual images)
 - [ ] Example folder exists at `examples/<extension-name>/`
-- [ ] Example files exist in both subfolders:
-  - `examples/<extension-name>/with-brandyml/demo.qmd`
-  - `examples/<extension-name>/without-brandyml/demo.qmd`
-- [ ] `_brand.yml` exists in `with-brandyml` folder
-- [ ] Example files have correct YAML frontmatter with filter
-- [ ] `without-brandyml/demo.qmd` demonstrates all attributes (main demo)
-- [ ] `with-brandyml/demo.qmd` focuses only on color/brand integration (if extension has color attributes)
+- [ ] Demo files demonstrate all features
 - [ ] CHANGELOG.md has entry under `[Unreleased]` or appropriate version
 
-### 7. Output Format
+### 9. Output Format
 
 Provide a summary table:
 
 | Category | Status | Issues |
 |----------|--------|--------|
+| Architecture | ✅/⚠️/❌ | List any issues |
 | Code Quality | ✅/⚠️/❌ | List any issues |
 | Completion Provider | ✅/⚠️/❌ | List any issues |
 | Attributes | ✅/⚠️/❌ | List any issues |
 | Color Support | ✅/⚠️/N/A | List any issues |
 | Registration | ✅/⚠️/❌ | List any issues |
+| Constants | ✅/⚠️/❌ | List any issues |
 | Documentation | ✅/⚠️/❌ | List any issues |
 
 Legend:
@@ -122,42 +132,36 @@ Then provide specific recommendations for any issues found, with file paths and 
 ## Example
 
 ```
-User: /review-extension roughnotation
+User: /review-extension countdown
 
-Claude: I'll review the roughnotation extension implementation...
+Claude: I'll review the countdown extension implementation...
 
-[Reads src/roughnotation.ts, src/extension.ts, README.md, examples/roughnotation/with-brandyml/demo.qmd, examples/roughnotation/without-brandyml/demo.qmd, CHANGELOG.md]
+[Reads relevant files]
 
 ## Review Summary
 
 | Category | Status | Issues |
 |----------|--------|--------|
+| Architecture | ✅ | Uses shared utilities correctly |
 | Code Quality | ✅ | None |
 | Completion Provider | ✅ | None |
-| Attributes | ⚠️ | Consider adding `rn-delay` attribute |
-| Color Support | ✅ | None |
-| Registration | ✅ | None |
+| Attributes | ✅ | Complete attribute coverage |
+| Color Support | ✅ | Brand colors integrated |
+| Registration | ✅ | Properly registered in PROVIDERS array |
+| Constants | ⚠️ | SHORTCODE_NAME could be in constants.ts |
 | Documentation | ⚠️ | Screenshot TODOs not completed |
 
 ## Recommendations
 
-1. **Attributes** (minor): The roughnotation library supports an `rn-delay` attribute for delaying animation start, but it's not in `RN_ATTRIBUTES`. Consider adding:
+1. **Constants** (minor): Consider moving `SHORTCODE_NAME` to `src/constants.ts`:
    ```typescript
-   {
-     name: 'rn-delay',
-     description: 'Delay before animation starts in milliseconds',
-     valueType: 'number',
-     placeholder: '0',
-     defaultValue: '0'
-   }
+   export const SHORTCODE = {
+     // ...existing
+     COUNTDOWN: 'countdown',
+   } as const;
    ```
 
-2. **Documentation** (minor): README.md has 5 TODO comments for screenshots/gifs that should be completed before publishing:
-   - Line 5: Hero gif
-   - Line 28: Attribute autocomplete gif
-   - Line 35: Value autocomplete gif
-   - Line 40: Color picker gif
-   - Line 45: Brand colors screenshot
+2. **Documentation** (minor): README.md has TODO comments for screenshots/gifs
 
-Overall the implementation is solid and follows best practices.
+Overall the implementation is solid and follows the new architecture patterns.
 ```

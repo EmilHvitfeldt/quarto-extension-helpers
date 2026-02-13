@@ -3,7 +3,6 @@ import { ShortcodeContext, AttributeDefinition } from './types';
 import {
   getShortcodeContext,
   analyzeAttributeOnlyContext,
-  createReplaceRange,
   createAttributeNameCompletions,
   createAttributeValueCompletions,
   buildCategoryOrder,

@@ -26,124 +26,208 @@ Thank you for your interest in contributing! This guide will help you add suppor
 
 ```
 src/
-  extension.ts          # Main entry point - registers all providers
-  utils.ts              # Shared utilities (filter detection, brand colors)
+  extension.ts          # Main entry point - data-driven provider registration
+  types.ts              # Shared TypeScript types (AttributeDefinition, ShortcodeContext)
+  shortcode-provider.ts # Shared utilities for shortcode parsing and completions
+  color-utils.ts        # Color parsing and conversion utilities
+  constants.ts          # Centralized constants (shortcode names, filters)
+  utils.ts              # Filter detection and brand colors
+  logger.ts             # Debug logging infrastructure
   <extension>.ts        # Extension-specific completion provider
-  <extension>-data.ts   # Optional: static data for completions (e.g., icon lists)
+  <extension>-icons.ts  # Optional: static data (e.g., icon lists)
 examples/
   <extension>/          # Extension-specific test files
-    demo.qmd            # Main demo file
+    demo.qmd            # Main demo file (shortcode-based)
+    with-brandyml/      # Brand color testing (span-based)
+    without-brandyml/   # Main testing (span-based)
 ```
-
-Each supported Quarto extension has its own `.ts` file in `src/` and a corresponding folder in `examples/`.
 
 ## Adding Support for a New Extension
 
 ### 1. Create the Extension File
 
-Create `src/[extension-name].ts` with:
+Create `src/<extension-name>.ts` using the shared utilities:
 
 ```typescript
 import * as vscode from 'vscode';
-import { hasFilter } from './utils'; // Only if filter detection is needed
+import { ShortcodeContext, AttributeDefinition } from './types';
+import {
+  getShortcodeContext,
+  analyzeAttributeOnlyContext,
+  createAttributeNameCompletions,
+  createAttributeValueCompletions,
+} from './shortcode-provider';
+import { getBrandColors } from './utils';
 
-// Define attributes for the extension
-const ATTRIBUTES = [
+const SHORTCODE_NAME = 'myextension';
+
+const ATTRIBUTES: AttributeDefinition[] = [
   {
     name: 'attr-name',
     description: 'What this attribute does',
-    valueType: 'enum', // or 'boolean', 'number', 'color'
-    values: ['option1', 'option2'], // for enum/boolean
-    defaultValue: 'option1'
+    valueType: 'enum',  // 'enum' | 'boolean' | 'number' | 'string' | 'color'
+    values: ['option1', 'option2'],
+    defaultValue: 'option1',
+    category: 'Category',  // Optional grouping
   },
-  // ... more attributes
 ];
 
+const ATTRIBUTES_MAP = new Map<string, AttributeDefinition>(
+  ATTRIBUTES.map(attr => [attr.name, attr])
+);
+
 export class MyExtensionCompletionProvider implements vscode.CompletionItemProvider {
-  provideCompletionItems(
+  async provideCompletionItems(
     document: vscode.TextDocument,
     position: vscode.Position,
     _token: vscode.CancellationToken,
     _context: vscode.CompletionContext
-  ): vscode.CompletionItem[] | undefined {
-    // Optional: Check if extension filter is loaded (see "Filter Detection" below)
-    // if (!hasFilter(document, 'extension-name')) {
-    //   return undefined;
-    // }
+  ): Promise<vscode.CompletionItem[] | undefined> {
+    const lineText = document.lineAt(position).text;
 
-    // Implement completion logic
-    // See roughnotation.ts or fontawesome.ts for reference
+    const baseContext = getShortcodeContext(lineText, position.character, SHORTCODE_NAME);
+    if (!baseContext) {
+      return undefined;
+    }
+
+    const marker = `{{< ${SHORTCODE_NAME}`;
+    const markerEnd = lineText.lastIndexOf(marker) + marker.length;
+    const contentBeforeCursor = lineText.substring(markerEnd, position.character);
+    const hasSpaceAfterName = lineText[markerEnd] === ' ';
+
+    const context = analyzeAttributeOnlyContext(
+      baseContext,
+      contentBeforeCursor,
+      position.character,
+      hasSpaceAfterName
+    );
+
+    switch (context.completionType) {
+      case 'attribute-name':
+        return createAttributeNameCompletions(ATTRIBUTES, context, position);
+      case 'attribute-value':
+        return this.getAttributeValueCompletions(context, position, document);
+      default:
+        return undefined;
+    }
+  }
+
+  private async getAttributeValueCompletions(
+    context: ShortcodeContext,
+    position: vscode.Position,
+    document: vscode.TextDocument
+  ): Promise<vscode.CompletionItem[]> {
+    const attr = ATTRIBUTES_MAP.get(context.attributeName || '');
+    if (!attr) {
+      return [];
+    }
+
+    const brandColors = attr.valueType === 'color'
+      ? await getBrandColors(document)
+      : [];
+
+    return createAttributeValueCompletions(attr, context, position, brandColors);
   }
 }
 ```
 
-### 2. Register the Provider
+### 2. Add Constants (Optional)
 
-In `src/extension.ts`:
+If you want centralized constants, add to `src/constants.ts`:
+
+```typescript
+export const SHORTCODE = {
+  // ... existing
+  MYEXTENSION: 'myextension',
+} as const;
+```
+
+### 3. Register the Provider
+
+Add to the `PROVIDERS` array in `src/extension.ts`:
 
 ```typescript
 import { MyExtensionCompletionProvider } from './myextension';
 
-export function activate(context: vscode.ExtensionContext): void {
-  const quartoSelector: vscode.DocumentSelector = { language: 'quarto', scheme: 'file' };
+const PROVIDERS: ProviderConfig[] = [
+  // ... existing providers
+  {
+    configKey: 'myextension',
+    createProvider: () => new MyExtensionCompletionProvider(),
+    triggerCharacters: [' ', '='],
+  },
+];
+```
 
-  // Register existing providers...
+### 4. Add Configuration Setting
 
-  // Register your new provider
-  registerMyExtensionProvider(context, quartoSelector);
-}
+Add to `package.json` under `contributes.configuration.properties`:
 
-function registerMyExtensionProvider(
-  context: vscode.ExtensionContext,
-  selector: vscode.DocumentSelector
-): void {
-  const provider = new MyExtensionCompletionProvider();
-  const triggerCharacters = [' ', '=', '-']; // Adjust as needed
-
-  context.subscriptions.push(
-    vscode.languages.registerCompletionItemProvider(
-      selector,
-      provider,
-      ...triggerCharacters
-    )
-  );
+```json
+"quartoExtensionHelpers.myextension.enabled": {
+  "type": "boolean",
+  "default": true,
+  "description": "Enable autocomplete support for the myextension extension"
 }
 ```
 
-### 3. Add Example Files
+### 5. Add Example Files
 
-Create an extension-specific example folder with demo files:
-- `examples/[extension]/without-brandyml/demo.qmd` - **main demo** with all features and attributes
-- `examples/[extension]/with-brandyml/demo.qmd` - **color-only demo** for testing brand color integration (only needed if extension has color attributes)
-- `examples/[extension]/with-brandyml/_brand.yml` - brand configuration for testing
+**For shortcode-based extensions:**
+- `examples/<extension>/demo.qmd`
 
-This structure allows each extension to have its own test environment and supports testing with and without `_brand.yml` present.
+**For span-based extensions (with filter):**
+- `examples/<extension>/without-brandyml/demo.qmd` - Main demo
+- `examples/<extension>/with-brandyml/demo.qmd` - Color demo
+- `examples/<extension>/with-brandyml/_brand.yml` - Brand colors
 
-### 4. Update Documentation
+### 6. Update Documentation
 
-- Add the extension to the table in `README.md`
-- Add a section describing the extension's features
-- Include TODO comments for screenshots/gifs
+- Add to `README.md` supported extensions list and add documentation section
+- Add entry to `CHANGELOG.md` under `[Unreleased]`
 
-### 5. Update CHANGELOG
+### 7. Compile and Lint
 
-Add your changes under `[Unreleased]` in `CHANGELOG.md`.
+```bash
+npm run compile
+npm run lint
+```
 
-## Key Patterns
+## Architecture Patterns
 
-### Filter Detection (Optional)
+### Shared Utilities (src/shortcode-provider.ts)
 
-Some extensions require their filter to be declared in the document's YAML frontmatter before providing completions. Others (like FontAwesome) work without this requirement because their syntax is distinctive enough.
+Use these instead of writing custom code:
 
-**When to use filter detection:**
-- The extension uses generic syntax that could conflict with other completions
-- The extension modifies existing elements (like roughnotation's span attributes)
+| Function | Purpose |
+|----------|---------|
+| `getShortcodeContext()` | Parse cursor position within `{{< name ... >}}` |
+| `analyzeShortcodeContext()` | Determine completion type for shortcodes with primary value |
+| `analyzeAttributeOnlyContext()` | Determine completion type for attributes-only shortcodes |
+| `createAttributeNameCompletions()` | Generate attribute name suggestions |
+| `createAttributeValueCompletions()` | Generate value suggestions based on type |
+| `createReplaceRange()` | Create replacement range for typed text |
+| `getUsedAttributes()` | Find already-used attributes |
+| `buildCategoryOrder()` | Create sorting map for categorized attributes |
 
-**When to skip filter detection:**
-- The extension uses distinctive shortcode syntax (like `{{< fa ... >}}`)
-- False positives are unlikely or harmless
+### Shared Types (src/types.ts)
 
-To check if an extension is enabled:
+```typescript
+interface AttributeDefinition {
+  name: string;
+  description: string;
+  valueType: 'enum' | 'boolean' | 'color' | 'number' | 'string';
+  values?: string[];
+  defaultValue?: string;
+  placeholder?: string;
+  quoted?: boolean;
+  category?: string;
+}
+```
+
+### Filter Detection
+
+For span-based extensions that need filter detection:
 
 ```typescript
 import { hasFilter } from './utils';
@@ -153,15 +237,9 @@ if (!hasFilter(document, 'myextension')) {
 }
 ```
 
-See `roughnotation.ts` for an example with filter detection, and `fontawesome.ts` for one without.
-
-### Context Detection
-
-Determine where the cursor is (class context, attribute name, attribute value) to provide appropriate completions.
-
 ### Brand Color Integration
 
-If your extension uses colors, you can integrate with `_brand.yml`:
+For extensions with color attributes:
 
 ```typescript
 import { getBrandColors } from './utils';
@@ -169,27 +247,39 @@ import { getBrandColors } from './utils';
 const brandColors = await getBrandColors(document);
 ```
 
+### Color Utilities (src/color-utils.ts)
+
+For color picker providers:
+
+```typescript
+import { parseColor, colorToHex, findNamedColor, findBrandColorName } from './color-utils';
+```
+
 ## Testing
 
 1. Press F5 to launch Extension Development Host
 2. Open example `.qmd` files
 3. Test autocomplete triggers and suggestions
-4. If your extension uses filter detection, test that completions only appear when the filter is declared
+4. Enable debug logging: set `quartoExtensionHelpers.debug.enabled` to `true`
+5. View logs: "Quarto Extension Helpers" in Output panel
 
 ## Code Style
 
 - Use TypeScript strict mode
-- Add JSDoc comments for public APIs
-- Keep completion providers focused and efficient
-- Cache expensive operations (see `utils.ts` for examples)
+- Use shared utilities from `shortcode-provider.ts`
+- Use types from `types.ts`
+- Add constants to `constants.ts`
+- Run `npm run lint` before submitting
+- Cache expensive operations
 
 ## Submitting Changes
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/extension-name`
 3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+4. Run `npm run compile && npm run lint`
+5. Test in Extension Development Host
+6. Submit a pull request
 
 ## Questions?
 

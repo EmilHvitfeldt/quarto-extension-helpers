@@ -23,22 +23,24 @@ Check that `src/<extension-name>.ts` exists. If not, suggest using `/add-extensi
 
 ### 2. Identify the Attributes Array
 
-Read `src/<extension-name>.ts` to find the attributes array. The naming convention is:
+Read `src/<extension-name>.ts` to find the attributes array. Look for arrays of type `AttributeDefinition[]`:
+- `ATTRIBUTES` - Common name
 - `RN_ATTRIBUTES` for roughnotation
-- `<PREFIX>_ATTRIBUTES` for other extensions (e.g., `LB_ATTRIBUTES` for lightbox)
+- Category arrays like `TIMER_ATTRIBUTES`, `COLOR_ATTRIBUTES` for countdown
 
 ### 3. Gather Attribute Information
 
 Ask the user for:
-- **Type**: `enum`, `boolean`, `number`, or `color`
+- **Type**: `enum`, `boolean`, `number`, `string`, or `color`
 - **Description**: What does this attribute do?
-- **Values** (for enum/boolean): What are the valid values?
+- **Values** (for enum): What are the valid values?
 - **Default value**: What is the default?
-- **Placeholder** (for number): What example value to show?
+- **Placeholder** (for number/string): What example value to show?
+- **Category** (if extension uses categories): Which category does it belong to?
 
 ### 4. Add Attribute Definition
 
-Add the new attribute to the attributes array in `src/<extension-name>.ts`.
+Add the new attribute using the `AttributeDefinition` interface from `src/types.ts`:
 
 **For enum type:**
 ```typescript
@@ -47,7 +49,8 @@ Add the new attribute to the attributes array in `src/<extension-name>.ts`.
   description: '<description>',
   valueType: 'enum',
   values: ['value1', 'value2', 'value3'],
-  defaultValue: 'value1'
+  defaultValue: 'value1',
+  category: 'Category',  // If applicable
 },
 ```
 
@@ -57,8 +60,8 @@ Add the new attribute to the attributes array in `src/<extension-name>.ts`.
   name: '<attribute-name>',
   description: '<description>',
   valueType: 'boolean',
-  values: ['true', 'false'],
-  defaultValue: 'true'
+  defaultValue: 'true',
+  category: 'Category',
 },
 ```
 
@@ -69,7 +72,21 @@ Add the new attribute to the attributes array in `src/<extension-name>.ts`.
   description: '<description>',
   valueType: 'number',
   placeholder: '100',
-  defaultValue: '100'
+  defaultValue: '100',
+  category: 'Category',
+},
+```
+
+**For string type:**
+```typescript
+{
+  name: '<attribute-name>',
+  description: '<description>',
+  valueType: 'string',
+  placeholder: 'example',
+  defaultValue: 'default',
+  quoted: true,  // If value should be quoted
+  category: 'Category',
 },
 ```
 
@@ -79,58 +96,71 @@ Add the new attribute to the attributes array in `src/<extension-name>.ts`.
   name: '<attribute-name>',
   description: '<description>',
   valueType: 'color',
-  values: ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'black'],
-  defaultValue: 'black'
+  category: 'Color',
 },
 ```
 
-**Note:** For color attributes, the completion provider should also integrate brand colors from `_brand.yml`. Check if the extension already has color support - if not, this may require additional implementation.
+**Note:** Color attributes automatically integrate with brand colors via `getBrandColors()` in the shared `createAttributeValueCompletions()` function.
 
-### 5. Update Example Files
+### 5. Update Attributes Map (if exists)
+
+If the extension has an `ATTRIBUTES_MAP`, ensure the new attribute is included. Usually this is automatic if using:
+```typescript
+const ATTRIBUTES_MAP = new Map<string, AttributeDefinition>(
+  ATTRIBUTES.map(attr => [attr.name, attr])
+);
+```
+
+### 6. Update Example Files
 
 Add an example using the new attribute to the appropriate demo file:
-- `examples/<extension-name>/without-brandyml/demo.qmd` - add examples for all attribute types (this is the main demo)
-- `examples/<extension-name>/with-brandyml/demo.qmd` - only update if adding a **color** attribute (this demo focuses solely on brand color integration)
+- `examples/<extension-name>/demo.qmd` - For shortcode-based extensions
+- `examples/<extension-name>/without-brandyml/demo.qmd` - For span-based extensions
 
-### 6. Update CHANGELOG
+If adding a **color** attribute, also update:
+- `examples/<extension-name>/with-brandyml/demo.qmd` - Demonstrates brand color integration
+
+### 7. Update CHANGELOG
 
 Add entry under `[Unreleased]`:
 ```markdown
 - Added `<attribute-name>` attribute support for <extension-name>
 ```
 
-### 7. Compile and Verify
+### 8. Compile and Verify
 
-Run `npm run compile` to verify there are no TypeScript errors.
+Run `npm run compile` and `npm run lint` to verify there are no errors.
 
 ## Example
 
 ```
-User: /add-attribute roughnotation rn-delay
+User: /add-attribute countdown blink_rate
 
-Claude: I'll add the `rn-delay` attribute to roughnotation.
+Claude: I'll add the `blink_rate` attribute to countdown.
 
-First, let me check the extension file exists and find the attributes array...
+First, let me check the extension file...
 
-[Reads src/roughnotation.ts, finds RN_ATTRIBUTES array]
+[Reads src/countdown.ts, finds TIMER_ATTRIBUTES array]
 
-The attributes array is `RN_ATTRIBUTES`. Please provide:
+The countdown extension uses categorized attributes. `blink_rate` sounds like a timer attribute.
 
-1. Type: Is this an enum, boolean, number, or color?
+Please provide:
+
+1. Type: Is this an enum, boolean, number, string, or color?
 2. Description: What does this attribute do?
 3. Default value: What is the default?
-4. (If enum) Valid values: What values can it accept?
-5. (If number) Placeholder: What example value should I show?
+4. (If number) Placeholder: What example value should I show?
 
-User: It's a number, controls the delay before animation starts in milliseconds, default is 0
+User: It's a number, controls the blink rate in milliseconds when blinking is enabled, default is 1000
 
-Claude: I'll add the rn-delay attribute to RN_ATTRIBUTES...
+Claude: I'll add the blink_rate attribute to TIMER_ATTRIBUTES...
 
 [Adds attribute definition]
-[Updates examples/roughnotation/without-brandyml/demo.qmd]
+[Updates examples/countdown/demo.qmd]
 [Updates CHANGELOG.md]
 [Runs npm run compile]
+[Runs npm run lint]
 
-Done! The `rn-delay` attribute has been added. Users can now use:
-[text]{.rn-fragment rn-delay=500}
+Done! The `blink_rate` attribute has been added. Users can now use:
+{{< countdown minutes=5 blink_colon=true blink_rate=500 >}}
 ```

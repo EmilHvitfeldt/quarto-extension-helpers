@@ -60,8 +60,9 @@ Verify these items are complete:
 - [ ] Extension icon exists at `images/icon.png` (128x128 PNG recommended)
 - [ ] `package.json` has `"icon": "images/icon.png"` field
 - [ ] All supported extensions listed in README.md
-- [ ] CONTRIBUTING.md is up to date
-- [ ] No TypeScript compilation errors (run `npm run compile`)
+- [ ] CONTRIBUTING.md is up to date with new architecture
+- [ ] No TypeScript compilation errors (`npm run compile`)
+- [ ] No ESLint errors (`npm run lint`)
 - [ ] Extension tested in development host (F5)
 - [ ] `[Unreleased]` section in CHANGELOG.md has content to release
 
@@ -138,37 +139,31 @@ New version: 0.2.0 ✅ (valid semver, greater than current)
 | Item | Status | Details |
 |------|--------|---------|
 | README TODOs | ⚠️ | 5 screenshot TODOs remaining |
-| Extension icon | ❌ | images/icon.png not found |
-| package.json icon field | ❌ | Missing "icon" field |
-| README extensions list | ✅ | roughnotation listed |
+| Extension icon | ✅ | images/icon.png exists |
+| package.json icon field | ✅ | "icon" field present |
+| README extensions list | ✅ | All 6 extensions listed |
+| CONTRIBUTING.md | ✅ | Up to date |
 | TypeScript compilation | ✅ | No errors |
+| ESLint | ✅ | No errors |
 | CHANGELOG entries | ✅ | Has unreleased content |
 
 ### Issues to Address
 
-1. **Extension icon** (required for marketplace):
-   - Create a 128x128 PNG icon at `images/icon.png`
-   - Add to package.json:
-     ```json
-     "icon": "images/icon.png"
-     ```
-
-2. **README screenshots** (recommended):
+1. **README screenshots** (recommended):
    - Line 5: Add hero gif
    - Line 32: Add attribute autocomplete gif
-   - Line 39: Add value autocomplete gif
-   - Line 44: Add color picker gif
-   - Line 49: Add brand colors screenshot
+   - etc.
 
-Would you like me to proceed with the release preparation anyway, or wait until these items are addressed?
+Would you like me to proceed with the release preparation anyway?
 
-User: proceed anyway
+User: proceed
 
 Claude: Proceeding with release preparation...
 
 [Updates package.json version to 0.2.0]
 [Updates CHANGELOG.md with today's date]
 [Runs npm run compile - success]
+[Runs npm run lint - success]
 [Runs npm run package - creates quarto-extension-helpers-0.2.0.vsix]
 
 ## Release Notes
