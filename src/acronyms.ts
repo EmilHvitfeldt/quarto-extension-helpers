@@ -1,4 +1,12 @@
 import * as vscode from 'vscode';
+import { ShortcodeContext } from './types';
+import { getShortcodeContext, createReplaceRange } from './shortcode-provider';
+
+/** Shortcode name constant */
+const SHORTCODE_NAME = 'acr';
+
+/** Maximum cache entries */
+const MAX_CACHE_ENTRIES = 100;
 
 /**
  * Acronym definition from YAML frontmatter
@@ -6,19 +14,6 @@ import * as vscode from 'vscode';
 interface AcronymDefinition {
   shortname: string;
   longname: string;
-}
-
-interface ShortcodeContext {
-  /** Position where shortcode content starts (after "acr ") */
-  contentStart: number;
-  /** The text being typed (for filtering) */
-  typedText: string;
-  /** Position where the current token starts */
-  tokenStart: number;
-  /** Whether there's a space before >}} */
-  hasSpaceBeforeEnd: boolean;
-  /** Whether a leading space is needed */
-  needsLeadingSpace: boolean;
 }
 
 // Cache for acronym definitions (keyed by document URI + version)
@@ -45,9 +40,8 @@ export class AcronymsCompletionProvider implements vscode.CompletionItemProvider
   ): vscode.CompletionItem[] | undefined {
     const lineText = document.lineAt(position).text;
 
-    // Check if we're inside a {{< acr ... >}} shortcode
-    const shortcodeContext = this.getShortcodeContext(lineText, position.character);
-    if (!shortcodeContext) {
+    const context = getShortcodeContext(lineText, position.character, SHORTCODE_NAME);
+    if (!context) {
       return undefined;
     }
 
@@ -57,66 +51,7 @@ export class AcronymsCompletionProvider implements vscode.CompletionItemProvider
       return undefined;
     }
 
-    return this.getAcronymCompletions(acronyms, shortcodeContext, position);
-  }
-
-  /**
-   * Find the shortcode context if cursor is inside {{< acr ... >}}
-   */
-  private getShortcodeContext(lineText: string, cursorPos: number): ShortcodeContext | null {
-    // Find {{< acr before cursor
-    const beforeCursor = lineText.substring(0, cursorPos);
-    const shortcodeStart = beforeCursor.lastIndexOf('{{< acr');
-
-    if (shortcodeStart === -1) {
-      return null;
-    }
-
-    // Check that we haven't closed this shortcode before cursor
-    const afterShortcodeStart = beforeCursor.substring(shortcodeStart);
-    if (afterShortcodeStart.includes('>}}')) {
-      return null;
-    }
-
-    // Find >}} after cursor
-    const afterCursor = lineText.substring(cursorPos);
-    const shortcodeEndRelative = afterCursor.indexOf('>}}');
-
-    if (shortcodeEndRelative === -1) {
-      return null;
-    }
-
-    // Check if there's already a space before >}}
-    const textBeforeEnd = afterCursor.substring(0, shortcodeEndRelative);
-    const hasSpaceBeforeEnd = shortcodeEndRelative > 0 && textBeforeEnd.endsWith(' ');
-
-    // Extract content position (after "{{< acr")
-    const acrEnd = shortcodeStart + '{{< acr'.length;
-
-    // Find where content starts (skip spaces after "acr")
-    let contentStart = acrEnd;
-    while (contentStart < cursorPos && lineText[contentStart] === ' ') {
-      contentStart++;
-    }
-    if (contentStart > cursorPos) {
-      contentStart = cursorPos;
-    }
-
-    // Check if there's a space immediately after "acr"
-    const hasSpaceAfterAcr = lineText[acrEnd] === ' ';
-
-    // Content before cursor (trimmed)
-    const contentBeforeCursor = lineText.substring(acrEnd, cursorPos);
-    const typedText = contentBeforeCursor.trim();
-    const tokenStart = contentStart;
-
-    return {
-      contentStart,
-      typedText,
-      tokenStart,
-      hasSpaceBeforeEnd,
-      needsLeadingSpace: !hasSpaceAfterAcr
-    };
+    return this.getAcronymCompletions(acronyms, context, position);
   }
 
   /**
@@ -135,8 +70,16 @@ export class AcronymsCompletionProvider implements vscode.CompletionItemProvider
 
     // Clear old versions for this document
     for (const key of acronymCache.keys()) {
-      if (key.startsWith(document.uri.toString()) && key !== cacheKey) {
+      if (key.startsWith(document.uri.toString() + ':') && key !== cacheKey) {
         acronymCache.delete(key);
+      }
+    }
+
+    // Enforce cache size limit
+    if (acronymCache.size >= MAX_CACHE_ENTRIES) {
+      const firstKey = acronymCache.keys().next().value;
+      if (firstKey) {
+        acronymCache.delete(firstKey);
       }
     }
 
@@ -247,13 +190,7 @@ export class AcronymsCompletionProvider implements vscode.CompletionItemProvider
   ): vscode.CompletionItem[] {
     const completions: vscode.CompletionItem[] = [];
     const typedText = context.typedText.toLowerCase();
-
-    const replaceRange = new vscode.Range(
-      position.line,
-      context.tokenStart,
-      position.line,
-      position.character
-    );
+    const replaceRange = createReplaceRange(position, context.tokenStart);
 
     for (let i = 0; i < acronyms.length; i++) {
       const acronym = acronyms[i];
@@ -270,7 +207,7 @@ export class AcronymsCompletionProvider implements vscode.CompletionItemProvider
       );
 
       item.range = replaceRange;
-      item.sortText = String(i).padStart(4, '0'); // Preserve definition order
+      item.sortText = String(i).padStart(4, '0');
 
       const leadingSpace = context.needsLeadingSpace ? ' ' : '';
       const trailingSpace = context.hasSpaceBeforeEnd ? '' : ' ';

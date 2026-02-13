@@ -1,4 +1,9 @@
 import * as vscode from 'vscode';
+import { ShortcodeContext } from './types';
+import { getShortcodeContext, createReplaceRange } from './shortcode-provider';
+
+/** Shortcode name constant */
+const SHORTCODE_NAME = 'now';
 
 /**
  * Alias definition for the now shortcode
@@ -24,30 +29,14 @@ const NOW_ALIASES: NowAlias[] = [
   { name: 'datetime', description: 'Date and time', example: '03/29/24 02:30 PM' },
   { name: 'isotime', description: 'ISO time format', example: '14:30:00' },
   { name: 'isodatetime', description: 'ISO date and time', example: '2024-03-29T14:30:00' },
-  { name: 'timestamp', description: 'Unix timestamp', example: '1711720200' }
+  { name: 'timestamp', description: 'Unix timestamp', example: '1711720200' },
 ];
-
-interface ShortcodeContext {
-  /** Position where shortcode content starts (after "now") */
-  contentStart: number;
-  /** The text being typed (for filtering) */
-  typedText: string;
-  /** Position where the current token starts */
-  tokenStart: number;
-  /** Whether there's a space before >}} */
-  hasSpaceBeforeEnd: boolean;
-  /** Whether a leading space is needed */
-  needsLeadingSpace: boolean;
-}
 
 /**
  * Completion provider for the now shortcode in Quarto
  *
  * Provides autocomplete for:
  * - {{< now ALIAS >}} - where ALIAS is a predefined format alias
- *
- * Available aliases: year, month, day, weekday, date, isodate,
- * hour, minute, ampm, time, datetime, isotime, isodatetime, timestamp
  */
 export class NowCompletionProvider implements vscode.CompletionItemProvider {
   provideCompletionItems(
@@ -58,72 +47,12 @@ export class NowCompletionProvider implements vscode.CompletionItemProvider {
   ): vscode.CompletionItem[] | undefined {
     const lineText = document.lineAt(position).text;
 
-    // Check if we're inside a {{< now ... >}} shortcode
-    const shortcodeContext = this.getShortcodeContext(lineText, position.character);
-    if (!shortcodeContext) {
+    const context = getShortcodeContext(lineText, position.character, SHORTCODE_NAME);
+    if (!context) {
       return undefined;
     }
 
-    return this.getAliasCompletions(shortcodeContext, position);
-  }
-
-  /**
-   * Find the shortcode context if cursor is inside {{< now ... >}}
-   */
-  private getShortcodeContext(lineText: string, cursorPos: number): ShortcodeContext | null {
-    // Find {{< now before cursor
-    const beforeCursor = lineText.substring(0, cursorPos);
-    const shortcodeStart = beforeCursor.lastIndexOf('{{< now');
-
-    if (shortcodeStart === -1) {
-      return null;
-    }
-
-    // Check that we haven't closed this shortcode before cursor
-    const afterShortcodeStart = beforeCursor.substring(shortcodeStart);
-    if (afterShortcodeStart.includes('>}}')) {
-      return null;
-    }
-
-    // Find >}} after cursor
-    const afterCursor = lineText.substring(cursorPos);
-    const shortcodeEndRelative = afterCursor.indexOf('>}}');
-
-    if (shortcodeEndRelative === -1) {
-      return null;
-    }
-
-    // Check if there's already a space before >}}
-    const textBeforeEnd = afterCursor.substring(0, shortcodeEndRelative);
-    const hasSpaceBeforeEnd = shortcodeEndRelative > 0 && textBeforeEnd.endsWith(' ');
-
-    // Extract content position (after "{{< now")
-    const nowEnd = shortcodeStart + '{{< now'.length;
-
-    // Find where content starts (skip spaces after "now")
-    let contentStart = nowEnd;
-    while (contentStart < cursorPos && lineText[contentStart] === ' ') {
-      contentStart++;
-    }
-    if (contentStart > cursorPos) {
-      contentStart = cursorPos;
-    }
-
-    // Check if there's a space immediately after "now"
-    const hasSpaceAfterNow = lineText[nowEnd] === ' ';
-
-    // Content before cursor (trimmed)
-    const contentBeforeCursor = lineText.substring(nowEnd, cursorPos);
-    const typedText = contentBeforeCursor.trim();
-    const tokenStart = contentStart;
-
-    return {
-      contentStart,
-      typedText,
-      tokenStart,
-      hasSpaceBeforeEnd,
-      needsLeadingSpace: !hasSpaceAfterNow
-    };
+    return this.getAliasCompletions(context, position);
   }
 
   /**
@@ -135,13 +64,7 @@ export class NowCompletionProvider implements vscode.CompletionItemProvider {
   ): vscode.CompletionItem[] {
     const completions: vscode.CompletionItem[] = [];
     const typedText = context.typedText.toLowerCase();
-
-    const replaceRange = new vscode.Range(
-      position.line,
-      context.tokenStart,
-      position.line,
-      position.character
-    );
+    const replaceRange = createReplaceRange(position, context.tokenStart);
 
     for (let i = 0; i < NOW_ALIASES.length; i++) {
       const alias = NOW_ALIASES[i];
@@ -158,7 +81,7 @@ export class NowCompletionProvider implements vscode.CompletionItemProvider {
       );
 
       item.range = replaceRange;
-      item.sortText = String(i).padStart(2, '0'); // Preserve definition order
+      item.sortText = String(i).padStart(2, '0');
 
       const leadingSpace = context.needsLeadingSpace ? ' ' : '';
       const trailingSpace = context.hasSpaceBeforeEnd ? '' : ' ';

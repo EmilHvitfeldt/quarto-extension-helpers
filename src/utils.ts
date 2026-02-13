@@ -1,7 +1,14 @@
 import * as vscode from 'vscode';
+import { BrandColor } from './types';
+
+// Re-export BrandColor for backwards compatibility
+export type { BrandColor } from './types';
 
 // Cache for frontmatter filter checks (keyed by document URI + version)
 const filterCache = new Map<string, Map<string, boolean>>();
+
+// Maximum cache size to prevent unbounded growth
+const MAX_CACHE_ENTRIES = 100;
 
 /**
  * Check if a document has a specific filter in its YAML frontmatter.
@@ -20,8 +27,16 @@ export function hasFilter(document: vscode.TextDocument, filterName: string): bo
 
   // Store in cache (clear old versions for this document)
   for (const key of filterCache.keys()) {
-    if (key.startsWith(document.uri.toString()) && key !== cacheKey) {
+    if (key.startsWith(document.uri.toString() + ':') && key !== cacheKey) {
       filterCache.delete(key);
+    }
+  }
+
+  // Enforce cache size limit (simple LRU: delete oldest entries)
+  if (filterCache.size >= MAX_CACHE_ENTRIES) {
+    const firstKey = filterCache.keys().next().value;
+    if (firstKey) {
+      filterCache.delete(firstKey);
     }
   }
 
@@ -68,16 +83,11 @@ function checkFilterInDocument(document: vscode.TextDocument, filterName: string
   return listPattern.test(frontmatter) || arrayPattern.test(frontmatter) || shorthandPattern.test(frontmatter);
 }
 
-/**
- * Brand color with name and hex value
- */
-export interface BrandColor {
-  name: string;
-  value: string;
-}
-
-// Cache for brand colors (keyed by workspace folder)
+// Cache for brand colors (keyed by file path)
 const brandColorCache = new Map<string, { colors: BrandColor[]; mtime: number }>();
+
+// Maximum brand color cache entries
+const MAX_BRAND_CACHE_ENTRIES = 50;
 
 /**
  * Get brand colors from _brand.yml in the document's directory or ancestor directories.
@@ -110,6 +120,14 @@ export async function getBrandColors(document: vscode.TextDocument): Promise<Bra
     const text = Buffer.from(content).toString('utf-8');
     const colors = parseBrandColors(text);
 
+    // Enforce cache size limit
+    if (brandColorCache.size >= MAX_BRAND_CACHE_ENTRIES) {
+      const firstKey = brandColorCache.keys().next().value;
+      if (firstKey) {
+        brandColorCache.delete(firstKey);
+      }
+    }
+
     brandColorCache.set(cacheKey, { colors, mtime: stat.mtime });
     return colors;
   } catch {
@@ -126,7 +144,9 @@ async function findBrandFile(documentUri: vscode.Uri, workspaceUri: vscode.Uri):
   let currentDir = vscode.Uri.joinPath(documentUri, '..');
   const workspacePath = workspaceUri.path;
 
-  while (currentDir.path.startsWith(workspacePath) || currentDir.path === workspacePath) {
+  // Ensure we check path with trailing separator to avoid prefix issues
+  // (e.g., /workspace matching /workspace2)
+  while (currentDir.path === workspacePath || currentDir.path.startsWith(workspacePath + '/')) {
     const brandFile = vscode.Uri.joinPath(currentDir, '_brand.yml');
     try {
       await vscode.workspace.fs.stat(brandFile);

@@ -8,173 +8,93 @@ import { DownloadthisCompletionProvider } from './downloadthis';
 import { AcronymsCompletionProvider } from './acronyms';
 import { NowCompletionProvider } from './now';
 
+/**
+ * Provider registration configuration
+ */
+interface ProviderConfig {
+  /** Configuration key for enabling/disabling */
+  configKey: string;
+  /** Factory function to create the completion provider */
+  createProvider: () => vscode.CompletionItemProvider;
+  /** Characters that trigger completion */
+  triggerCharacters: string[];
+  /** Optional: Factory to create additional providers (e.g., color provider) */
+  additionalProviders?: Array<{
+    register: (
+      context: vscode.ExtensionContext,
+      selector: vscode.DocumentSelector
+    ) => void;
+  }>;
+}
+
+/**
+ * All registered providers
+ */
+const PROVIDERS: ProviderConfig[] = [
+  {
+    configKey: 'roughnotation',
+    createProvider: () => new RoughNotationCompletionProvider(),
+    triggerCharacters: [' ', '=', '-', '.'],
+    additionalProviders: [
+      {
+        register: (context, selector) => {
+          context.subscriptions.push(
+            vscode.languages.registerColorProvider(selector, new RoughNotationColorProvider())
+          );
+        },
+      },
+    ],
+  },
+  {
+    configKey: 'fontawesome',
+    createProvider: () => new FontAwesomeCompletionProvider(),
+    triggerCharacters: [' ', '<', '='],
+  },
+  {
+    configKey: 'countdown',
+    createProvider: () => new CountdownCompletionProvider(),
+    triggerCharacters: [' ', '='],
+  },
+  {
+    configKey: 'downloadthis',
+    createProvider: () => new DownloadthisCompletionProvider(),
+    triggerCharacters: [' ', '='],
+  },
+  {
+    configKey: 'acronyms',
+    createProvider: () => new AcronymsCompletionProvider(),
+    triggerCharacters: [' '],
+  },
+  {
+    configKey: 'now',
+    createProvider: () => new NowCompletionProvider(),
+    triggerCharacters: [' '],
+  },
+];
+
 export function activate(context: vscode.ExtensionContext): void {
   const quartoSelector: vscode.DocumentSelector = { language: 'quarto', scheme: 'file' };
   const config = vscode.workspace.getConfiguration('quartoExtensionHelpers');
 
-  // Register roughnotation providers
-  if (config.get<boolean>('roughnotation.enabled', true)) {
-    registerRoughNotationProvider(context, quartoSelector);
-    registerRoughNotationColorProvider(context, quartoSelector);
+  for (const providerConfig of PROVIDERS) {
+    if (config.get<boolean>(`${providerConfig.configKey}.enabled`, true)) {
+      // Register the main completion provider
+      context.subscriptions.push(
+        vscode.languages.registerCompletionItemProvider(
+          quartoSelector,
+          providerConfig.createProvider(),
+          ...providerConfig.triggerCharacters
+        )
+      );
+
+      // Register any additional providers (e.g., color providers)
+      if (providerConfig.additionalProviders) {
+        for (const additional of providerConfig.additionalProviders) {
+          additional.register(context, quartoSelector);
+        }
+      }
+    }
   }
-
-  // Register fontawesome provider
-  if (config.get<boolean>('fontawesome.enabled', true)) {
-    registerFontAwesomeProvider(context, quartoSelector);
-  }
-
-  // Register countdown provider
-  if (config.get<boolean>('countdown.enabled', true)) {
-    registerCountdownProvider(context, quartoSelector);
-  }
-
-  // Register downloadthis provider
-  if (config.get<boolean>('downloadthis.enabled', true)) {
-    registerDownloadthisProvider(context, quartoSelector);
-  }
-
-  // Register acronyms provider
-  if (config.get<boolean>('acronyms.enabled', true)) {
-    registerAcronymsProvider(context, quartoSelector);
-  }
-
-  // Register now provider
-  if (config.get<boolean>('now.enabled', true)) {
-    registerNowProvider(context, quartoSelector);
-  }
-}
-
-/**
- * Register roughnotation autocomplete provider
- */
-function registerRoughNotationProvider(
-  context: vscode.ExtensionContext,
-  selector: vscode.DocumentSelector
-): void {
-  const provider = new RoughNotationCompletionProvider();
-  const triggerCharacters = [' ', '=', '-', '.'];
-
-  context.subscriptions.push(
-    vscode.languages.registerCompletionItemProvider(
-      selector,
-      provider,
-      ...triggerCharacters
-    )
-  );
-}
-
-/**
- * Register roughnotation color provider for color picker support
- */
-function registerRoughNotationColorProvider(
-  context: vscode.ExtensionContext,
-  selector: vscode.DocumentSelector
-): void {
-  const provider = new RoughNotationColorProvider();
-
-  context.subscriptions.push(
-    vscode.languages.registerColorProvider(selector, provider)
-  );
-}
-
-/**
- * Register fontawesome autocomplete provider
- */
-function registerFontAwesomeProvider(
-  context: vscode.ExtensionContext,
-  selector: vscode.DocumentSelector
-): void {
-  const provider = new FontAwesomeCompletionProvider();
-  // Trigger on space (after "fa" or icon name), '<' (after {{), and '=' (for attribute values)
-  const triggerCharacters = [' ', '<', '='];
-
-  context.subscriptions.push(
-    vscode.languages.registerCompletionItemProvider(
-      selector,
-      provider,
-      ...triggerCharacters
-    )
-  );
-}
-
-/**
- * Register countdown autocomplete provider
- */
-function registerCountdownProvider(
-  context: vscode.ExtensionContext,
-  selector: vscode.DocumentSelector
-): void {
-  const provider = new CountdownCompletionProvider();
-  // Trigger on space (after "countdown"), '=' (for attribute values)
-  const triggerCharacters = [' ', '='];
-
-  context.subscriptions.push(
-    vscode.languages.registerCompletionItemProvider(
-      selector,
-      provider,
-      ...triggerCharacters
-    )
-  );
-}
-
-/**
- * Register downloadthis autocomplete provider
- */
-function registerDownloadthisProvider(
-  context: vscode.ExtensionContext,
-  selector: vscode.DocumentSelector
-): void {
-  const provider = new DownloadthisCompletionProvider();
-  // Trigger on space (after "downloadthis"), '=' (for attribute values)
-  const triggerCharacters = [' ', '='];
-
-  context.subscriptions.push(
-    vscode.languages.registerCompletionItemProvider(
-      selector,
-      provider,
-      ...triggerCharacters
-    )
-  );
-}
-
-/**
- * Register acronyms autocomplete provider
- */
-function registerAcronymsProvider(
-  context: vscode.ExtensionContext,
-  selector: vscode.DocumentSelector
-): void {
-  const provider = new AcronymsCompletionProvider();
-  // Trigger on space (after "acr")
-  const triggerCharacters = [' '];
-
-  context.subscriptions.push(
-    vscode.languages.registerCompletionItemProvider(
-      selector,
-      provider,
-      ...triggerCharacters
-    )
-  );
-}
-
-/**
- * Register now autocomplete provider
- */
-function registerNowProvider(
-  context: vscode.ExtensionContext,
-  selector: vscode.DocumentSelector
-): void {
-  const provider = new NowCompletionProvider();
-  // Trigger on space (after "now")
-  const triggerCharacters = [' '];
-
-  context.subscriptions.push(
-    vscode.languages.registerCompletionItemProvider(
-      selector,
-      provider,
-      ...triggerCharacters
-    )
-  );
 }
 
 export function deactivate(): void {}

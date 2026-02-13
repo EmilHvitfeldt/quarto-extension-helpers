@@ -1,69 +1,51 @@
 import * as vscode from 'vscode';
-import { hasFilter, getBrandColors, BrandColor } from './utils';
+import { AttributeDefinition, BrandColor } from './types';
+import {
+  createReplaceRange,
+  getUsedAttributes,
+  createBooleanValueCompletions,
+  createEnumValueCompletions,
+  createColorValueCompletions,
+} from './shortcode-provider';
+import { hasFilter, getBrandColors } from './utils';
 
-type ValueType = 'enum' | 'boolean' | 'color' | 'number';
+/** Filter name constant */
+const FILTER_NAME = 'roughnotation';
 
-/**
- * Roughnotation attribute definition.
- * Note: defaultValue and placeholder are strings even for boolean/number types
- * since they're used directly in completion text insertion.
- */
-interface RnAttribute {
-  name: string;
-  description: string;
-  valueType: ValueType;
-  values?: string[];
-  placeholder?: string;
-  defaultValue?: string;
-}
-
-interface SpanContext {
-  content: string;
-}
-
-interface CompletionContext {
-  type: 'attribute-name' | 'attribute-value';
-  prefix?: string;
-  attributeName?: string;
-  needsLeadingSpace?: boolean;
-}
-
-const RN_ATTRIBUTES: RnAttribute[] = [
+/** Roughnotation attributes */
+const RN_ATTRIBUTES: AttributeDefinition[] = [
   // Attributes with fixed options (enum-like)
   {
     name: 'rn-type',
     description: 'The type of annotation to draw',
     valueType: 'enum',
     values: ['highlight', 'underline', 'box', 'circle', 'strike-through', 'crossed-off', 'bracket'],
-    defaultValue: 'highlight'
+    defaultValue: 'highlight',
   },
   {
     name: 'rn-brackets',
     description: 'Which sides to draw brackets on (can be comma-separated)',
     valueType: 'enum',
     values: ['left', 'right', 'top', 'bottom', 'left,right', 'top,bottom'],
-    defaultValue: 'right'
+    defaultValue: 'right',
   },
   {
     name: 'rn-animate',
     description: 'Whether to animate the annotation',
     valueType: 'boolean',
-    values: ['true', 'false'],
-    defaultValue: 'true'
+    defaultValue: 'true',
   },
   {
     name: 'rn-multiline',
     description: 'Whether to annotate across multiple lines',
     valueType: 'boolean',
-    values: ['true', 'false'],
-    defaultValue: 'false'
+    defaultValue: 'false',
   },
   {
     name: 'rn-rtl',
     description: 'Right-to-left text direction',
     valueType: 'boolean',
-    values: ['true', 'false'],
-    defaultValue: 'false'
+    defaultValue: 'false',
   },
 
   // Attributes with free-form values
@@ -72,51 +54,60 @@ const RN_ATTRIBUTES: RnAttribute[] = [
     description: 'CSS color for the annotation',
     valueType: 'color',
     values: ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'black'],
-    defaultValue: 'yellow'
+    defaultValue: 'yellow',
   },
   {
     name: 'rn-animationDuration',
     description: 'Animation duration in milliseconds',
     valueType: 'number',
     placeholder: '800',
-    defaultValue: '800'
+    defaultValue: '800',
   },
   {
     name: 'rn-strokeWidth',
     description: 'Stroke width in pixels',
     valueType: 'number',
     placeholder: '1',
-    defaultValue: '1'
+    defaultValue: '1',
   },
   {
     name: 'rn-padding',
     description: 'Padding around the annotation in pixels',
     valueType: 'number',
     placeholder: '5',
-    defaultValue: '5'
+    defaultValue: '5',
   },
   {
     name: 'rn-iterations',
     description: 'Number of drawing passes',
     valueType: 'number',
     placeholder: '2',
-    defaultValue: '2'
+    defaultValue: '2',
   },
   {
     name: 'fragment-index',
     description: 'RevealJS fragment order',
     valueType: 'number',
-    placeholder: '1'
-  }
+    placeholder: '1',
+  },
 ];
 
-// Build a Map for O(1) attribute lookup
-const RN_ATTRIBUTES_MAP = new Map<string, RnAttribute>(
+/** Map for O(1) attribute lookup */
+const RN_ATTRIBUTES_MAP = new Map<string, AttributeDefinition>(
   RN_ATTRIBUTES.map(attr => [attr.name, attr])
 );
 
-function getAttributeByName(name: string): RnAttribute | undefined {
-  return RN_ATTRIBUTES_MAP.get(name);
+/** Span context for roughnotation */
+interface SpanContext {
+  content: string;
+}
+
+/** Completion context types */
+interface CompletionContext {
+  type: 'attribute-name' | 'attribute-value';
+  prefix?: string;
+  attributeName?: string;
+  needsLeadingSpace?: boolean;
 }
 
 /**
@@ -130,7 +121,7 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
     _context: vscode.CompletionContext
   ): Promise<vscode.CompletionItem[] | undefined> {
     // Check if roughnotation filter is loaded in the document
-    if (!hasFilter(document, 'roughnotation')) {
+    if (!hasFilter(document, FILTER_NAME)) {
       return undefined;
     }
 
@@ -161,7 +152,7 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
       const brandColors = completionContext.attributeName === 'rn-color'
         ? await getBrandColors(document)
         : [];
-      return this.getAttributeValueCompletions(completionContext.attributeName, brandColors);
+      return this.getAttributeValueCompletions(completionContext.attributeName, position, brandColors);
     }
 
     return undefined;
@@ -180,7 +171,6 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
         break;
       }
       if (lineText[i] === '}') {
-        // Found closing brace before opening, cursor is outside
         return null;
       }
     }
@@ -197,7 +187,6 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
         break;
       }
       if (lineText[i] === '{') {
-        // Found another opening brace, cursor is outside
         return null;
       }
     }
@@ -218,11 +207,8 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
 
   /**
    * Check if span content contains roughnotation class.
-   * Only matches class notation at the start or after whitespace, not inside quoted values.
    */
   private isRoughNotationSpan(content: string): boolean {
-    // Match .rn-fragment or .rn at start or after whitespace
-    // This avoids matching inside attribute values like foo=".rn"
     return /(?:^|\s)\.rn-fragment\b/.test(content) || /(?:^|\s)\.rn\b/.test(content);
   }
 
@@ -235,7 +221,7 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
     if (attrValueMatch) {
       return {
         type: 'attribute-value',
-        attributeName: attrValueMatch[1]
+        attributeName: attrValueMatch[1],
       };
     }
 
@@ -245,7 +231,7 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
       return {
         type: 'attribute-name',
         prefix: attrNameMatch[1],
-        needsLeadingSpace: false
+        needsLeadingSpace: false,
       };
     }
 
@@ -255,7 +241,7 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
       return {
         type: 'attribute-name',
         prefix: '',
-        needsLeadingSpace: classMatch[2].length === 0
+        needsLeadingSpace: classMatch[2].length === 0,
       };
     }
 
@@ -271,27 +257,16 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
     position: vscode.Position,
     needsLeadingSpace: boolean
   ): vscode.CompletionItem[] {
-    // Find attributes already used in the span
-    const usedAttributes = this.getUsedAttributes(spanContent);
-
-    // Calculate the range to replace (the typed prefix)
-    const replaceRange = new vscode.Range(
-      position.line,
-      position.character - prefix.length,
-      position.line,
-      position.character
-    );
-
+    const usedAttributes = getUsedAttributes(spanContent, RN_ATTRIBUTES);
+    const replaceRange = createReplaceRange(position, position.character - prefix.length);
     const spacePrefix = needsLeadingSpace ? ' ' : '';
 
     const completions: vscode.CompletionItem[] = [];
     for (const attr of RN_ATTRIBUTES) {
-      // Skip if already used
       if (usedAttributes.has(attr.name)) {
         continue;
       }
 
-      // Skip if doesn't match prefix
       if (prefix && !attr.name.startsWith(prefix)) {
         continue;
       }
@@ -301,13 +276,11 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
       item.documentation = new vscode.MarkdownString(attr.description);
       item.range = replaceRange;
 
-      // Insert with = for easier value entry
       if (attr.valueType === 'enum' || attr.valueType === 'boolean' || attr.valueType === 'color') {
         item.insertText = new vscode.SnippetString(`${spacePrefix}${attr.name}=\${1}`);
-        // Trigger suggestions for values after inserting
         item.command = {
           command: 'editor.action.triggerSuggest',
-          title: 'Trigger Suggest'
+          title: 'Trigger Suggest',
         };
       } else {
         item.insertText = new vscode.SnippetString(`${spacePrefix}${attr.name}=\${1:${attr.placeholder || ''}}`);
@@ -322,49 +295,67 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
   /**
    * Get completions for attribute values
    */
-  private getAttributeValueCompletions(attributeName: string, brandColors: BrandColor[] = []): vscode.CompletionItem[] {
-    const attr = getAttributeByName(attributeName);
+  private getAttributeValueCompletions(
+    attributeName: string,
+    position: vscode.Position,
+    brandColors: BrandColor[] = []
+  ): vscode.CompletionItem[] {
+    const attr = RN_ATTRIBUTES_MAP.get(attributeName);
     if (!attr) {
       return [];
     }
 
     const completions: vscode.CompletionItem[] = [];
 
+    // Create a minimal context for the shared helpers
+    const context = {
+      fullContent: '',
+      contentStart: position.character,
+      completionType: 'attribute-value' as const,
+      typedText: '',
+      tokenStart: position.character,
+      hasSpaceBeforeEnd: false,
+      needsLeadingSpace: false,
+    };
+
     // Add brand colors first for rn-color (they take priority)
-    // Insert the hex value since roughnotation doesn't understand brand names
     if (attr.name === 'rn-color' && brandColors.length > 0) {
       for (const brandColor of brandColors) {
         const item = new vscode.CompletionItem(brandColor.name, vscode.CompletionItemKind.Color);
         item.detail = `Brand: ${brandColor.value}`;
-        item.documentation = new vscode.MarkdownString(`Brand color from \`_brand.yml\`\n\nInserts: \`${brandColor.value}\``);
-        item.insertText = brandColor.value; // Insert hex value, not the name
-        item.sortText = '0' + brandColor.name; // Sort brand colors first
+        item.documentation = new vscode.MarkdownString(
+          `Brand color from \`_brand.yml\`\n\nInserts: \`${brandColor.value}\``
+        );
+        item.insertText = brandColor.value;
+        item.sortText = '0' + brandColor.name;
         completions.push(item);
       }
     }
 
-    if (attr.values && attr.values.length > 0) {
-      for (const value of attr.values) {
-        const item = new vscode.CompletionItem(value, vscode.CompletionItemKind.Value);
-
-        if (value === attr.defaultValue) {
-          item.detail = '(default)';
-          item.sortText = '1' + value; // Sort after brand colors
-        } else {
-          item.sortText = '2' + value;
+    if (attr.valueType === 'boolean') {
+      const boolCompletions = createBooleanValueCompletions(context, position, attr.defaultValue);
+      // Remove trailing space from insert text for span context
+      for (const item of boolCompletions) {
+        if (typeof item.insertText === 'string') {
+          item.insertText = item.insertText.trim();
         }
-
-        // For brackets, add hint about comma-separation
+      }
+      completions.push(...boolCompletions);
+    } else if (attr.values && attr.values.length > 0) {
+      const enumCompletions = createEnumValueCompletions(attr.values, context, position, attr.defaultValue);
+      // Remove trailing space and add brackets hint for rn-brackets
+      for (const item of enumCompletions) {
+        if (typeof item.insertText === 'string') {
+          item.insertText = item.insertText.trim();
+        }
         if (attr.name === 'rn-brackets') {
           item.documentation = new vscode.MarkdownString(
-            `Add \`${value}\` bracket. Multiple values can be comma-separated.`
+            `Add \`${item.label}\` bracket. Multiple values can be comma-separated.`
           );
         }
-
-        completions.push(item);
       }
+      completions.push(...enumCompletions);
     } else if (attr.valueType === 'number') {
-      // For numbers, provide a placeholder hint
       const item = new vscode.CompletionItem(
         attr.placeholder || '0',
         vscode.CompletionItemKind.Value
@@ -375,24 +366,9 @@ export class RoughNotationCompletionProvider implements vscode.CompletionItemPro
 
     return completions;
   }
-
-  /**
-   * Extract already-used attribute names from span content.
-   * Only matches attributes after whitespace to avoid partial matches like "data-rn-type".
-   */
-  private getUsedAttributes(content: string): Set<string> {
-    const used = new Set<string>();
-    // Match attribute=value patterns that start after whitespace or at beginning
-    // This avoids matching "data-rn-type=" and incorrectly extracting "rn-type"
-    const matches = content.matchAll(/(?:^|\s)([\w-]+)=/g);
-    for (const match of matches) {
-      used.add(match[1]);
-    }
-    return used;
-  }
 }
 
-// Named CSS colors mapped to RGB values
+// Named CSS colors mapped to RGB values for color picker
 const CSS_COLORS: Record<string, [number, number, number]> = {
   red: [255, 0, 0],
   blue: [0, 0, 255],
@@ -424,7 +400,7 @@ const CSS_COLORS: Record<string, [number, number, number]> = {
   salmon: [250, 128, 114],
   tomato: [255, 99, 71],
   turquoise: [64, 224, 208],
-  violet: [238, 130, 238]
+  violet: [238, 130, 238],
 };
 
 /**
@@ -438,19 +414,15 @@ export class RoughNotationColorProvider implements vscode.DocumentColorProvider 
     document: vscode.TextDocument,
     _token: vscode.CancellationToken
   ): Promise<vscode.ColorInformation[]> {
-    // Check if roughnotation filter is loaded
-    if (!hasFilter(document, 'roughnotation')) {
+    if (!hasFilter(document, FILTER_NAME)) {
       return [];
     }
 
-    // Load brand colors
     const brandColors = await getBrandColors(document);
     this.brandColorsCache.set(document.uri.toString(), brandColors);
 
     const colors: vscode.ColorInformation[] = [];
     const text = document.getText();
-
-    // Find all rn-color=value patterns
     const pattern = /rn-color=([^\s\}]+)/g;
     let match;
 
@@ -462,7 +434,6 @@ export class RoughNotationColorProvider implements vscode.DocumentColorProvider 
         const startPos = document.positionAt(match.index + 'rn-color='.length);
         const endPos = document.positionAt(match.index + 'rn-color='.length + colorValue.length);
         const range = new vscode.Range(startPos, endPos);
-
         colors.push(new vscode.ColorInformation(range, color));
       }
     }
@@ -478,11 +449,9 @@ export class RoughNotationColorProvider implements vscode.DocumentColorProvider 
     const presentations: vscode.ColorPresentation[] = [];
     const brandColors = this.brandColorsCache.get(context.document.uri.toString()) || [];
 
-    // Provide hex format
     const hex = this.colorToHex(color);
     presentations.push(new vscode.ColorPresentation(hex));
 
-    // Provide rgb format
     const r = Math.round(color.red * 255);
     const g = Math.round(color.green * 255);
     const b = Math.round(color.blue * 255);
@@ -493,8 +462,6 @@ export class RoughNotationColorProvider implements vscode.DocumentColorProvider 
       presentations.push(new vscode.ColorPresentation(`rgb(${r},${g},${b})`));
     }
 
-    // Check if this matches a brand color - show as info but insert hex
-    // (roughnotation doesn't understand brand color names)
     const brandColorName = this.findBrandColorName(color, brandColors);
     if (brandColorName) {
       const brandPresentation = new vscode.ColorPresentation(`${hex} (${brandColorName})`);
@@ -503,7 +470,6 @@ export class RoughNotationColorProvider implements vscode.DocumentColorProvider 
       presentations.unshift(brandPresentation);
     }
 
-    // Check if this matches a named CSS color
     const namedColor = this.findNamedColor(color);
     if (namedColor) {
       presentations.unshift(new vscode.ColorPresentation(namedColor));
@@ -513,13 +479,10 @@ export class RoughNotationColorProvider implements vscode.DocumentColorProvider 
   }
 
   private parseColor(value: string, brandColors: BrandColor[] = []): vscode.Color | null {
-    // Remove quotes if present
     const cleanValue = value.replace(/^["']|["']$/g, '');
 
-    // Check brand colors first (case-sensitive)
     for (const brandColor of brandColors) {
       if (brandColor.name === cleanValue) {
-        // Parse the brand color's value (which should be a hex or color name)
         return this.parseColorValue(brandColor.value);
       }
     }
@@ -530,13 +493,11 @@ export class RoughNotationColorProvider implements vscode.DocumentColorProvider 
   private parseColorValue(value: string): vscode.Color | null {
     const cleanValue = value.toLowerCase();
 
-    // Check named CSS colors
     if (CSS_COLORS[cleanValue]) {
       const [r, g, b] = CSS_COLORS[cleanValue];
       return new vscode.Color(r / 255, g / 255, b / 255, 1);
     }
 
-    // Parse hex color (#RGB, #RRGGBB, #RRGGBBAA)
     const hexMatch = cleanValue.match(/^#([0-9a-f]{3,8})$/i);
     if (hexMatch) {
       const hex = hexMatch[1];
@@ -559,7 +520,6 @@ export class RoughNotationColorProvider implements vscode.DocumentColorProvider 
       }
     }
 
-    // Parse rgb/rgba
     const rgbMatch = cleanValue.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)$/);
     if (rgbMatch) {
       const r = parseInt(rgbMatch[1], 10) / 255;

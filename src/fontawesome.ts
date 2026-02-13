@@ -1,5 +1,16 @@
 import * as vscode from 'vscode';
+import { ShortcodeContext, AttributeDefinition } from './types';
+import {
+  getShortcodeContext,
+  analyzeShortcodeContext,
+  createReplaceRange,
+  getUsedAttributes,
+  createEnumValueCompletions,
+} from './shortcode-provider';
 import { FONTAWESOME_ICONS } from './fontawesome-icons';
+
+/** Shortcode name constant */
+const SHORTCODE_NAME = 'fa';
 
 /** Size values for FontAwesome icons (sortOrder controls display order) */
 const SIZE_VALUES = [
@@ -35,30 +46,54 @@ const SIZE_VALUES = [
 ];
 
 /** Attributes for FontAwesome shortcodes */
-const ATTRIBUTES = [
-  { name: 'size', description: 'Icon size (relative, literal, or LaTeX)', hasValues: true },
-  { name: 'title', description: 'Accessibility title text', hasValues: false },
+const ATTRIBUTES: AttributeDefinition[] = [
+  {
+    name: 'size',
+    description: 'Icon size (relative, literal, or LaTeX)',
+    valueType: 'enum',
+    values: SIZE_VALUES.map(s => s.value),
+  },
+  {
+    name: 'title',
+    description: 'Accessibility title text',
+    valueType: 'string',
+    quoted: true,
+  },
 ];
 
-type CompletionType = 'icon' | 'attribute-name' | 'attribute-value';
+/** Attribute names set for quick lookup */
+const ATTRIBUTE_NAMES = new Set(ATTRIBUTES.map(a => a.name));
 
-interface ShortcodeContext {
-  /** The full content between {{< fa and >}} */
-  fullContent: string;
-  /** Position where the shortcode content starts (after "fa ") */
-  contentStart: number;
-  /** What type of completion to provide */
-  completionType: CompletionType;
-  /** The text being typed (for filtering) */
-  typedText: string;
-  /** Position where the current token starts */
-  tokenStart: number;
-  /** Attribute name if completing a value */
-  attributeName?: string;
-  /** Whether there's a space before >}} */
-  hasSpaceBeforeEnd: boolean;
-  /** Whether a leading space is needed before the completion */
-  needsLeadingSpace: boolean;
+/**
+ * Check if an icon name has been specified in the content
+ */
+function hasIconSpecified(content: string): boolean {
+  if (!content) {
+    return false;
+  }
+
+  const parts = content.split(/\s+/).filter(p => p && !p.includes('='));
+
+  // Check if first part is "brands"
+  if (parts[0] === 'brands') {
+    return parts.length >= 2;
+  }
+
+  // Check if first part is a valid icon name
+  if (parts.length >= 1) {
+    const potentialIcon = parts[0];
+
+    // Don't treat known attribute names as icons
+    if (ATTRIBUTE_NAMES.has(potentialIcon)) {
+      return false;
+    }
+
+    // It's an icon if it's in our list or looks like an icon name (lowercase alphanumeric with hyphens)
+    return FONTAWESOME_ICONS.includes(potentialIcon as (typeof FONTAWESOME_ICONS)[number]) ||
+           /^[a-z][a-z0-9-]*$/i.test(potentialIcon);
+  }
+
+  return false;
 }
 
 /**
@@ -77,186 +112,38 @@ export class FontAwesomeCompletionProvider implements vscode.CompletionItemProvi
     _token: vscode.CancellationToken,
     _context: vscode.CompletionContext
   ): vscode.CompletionItem[] | undefined {
-
     const lineText = document.lineAt(position).text;
 
-    // Check if we're inside a {{< fa ... >}} shortcode
-    const shortcodeContext = this.getShortcodeContext(lineText, position.character);
-    if (!shortcodeContext) {
+    const baseContext = getShortcodeContext(lineText, position.character, SHORTCODE_NAME);
+    if (!baseContext) {
       return undefined;
     }
 
-    switch (shortcodeContext.completionType) {
+    // Get content before cursor for analysis
+    const marker = `{{< ${SHORTCODE_NAME}`;
+    const markerEnd = lineText.lastIndexOf(marker) + marker.length;
+    const contentBeforeCursor = lineText.substring(markerEnd, position.character);
+    const hasSpaceAfterFa = lineText[markerEnd] === ' ';
+
+    const context = analyzeShortcodeContext(
+      baseContext,
+      contentBeforeCursor,
+      position.character,
+      hasSpaceAfterFa,
+      hasIconSpecified,
+      'icon'
+    );
+
+    switch (context.completionType) {
       case 'icon':
-        return this.getIconCompletions(shortcodeContext, position);
+        return this.getIconCompletions(context, position);
       case 'attribute-name':
-        return this.getAttributeNameCompletions(shortcodeContext, position);
+        return this.getAttributeNameCompletions(context, position);
       case 'attribute-value':
-        return this.getAttributeValueCompletions(shortcodeContext, position);
+        return this.getAttributeValueCompletions(context, position);
       default:
         return undefined;
     }
-  }
-
-  /**
-   * Find the shortcode context if cursor is inside {{< fa ... >}}
-   */
-  private getShortcodeContext(lineText: string, cursorPos: number): ShortcodeContext | null {
-    // Find {{< fa before cursor
-    const beforeCursor = lineText.substring(0, cursorPos);
-    const shortcodeStart = beforeCursor.lastIndexOf('{{< fa');
-
-    if (shortcodeStart === -1) {
-      return null;
-    }
-
-    // Check that we haven't closed this shortcode before cursor
-    const afterShortcodeStart = beforeCursor.substring(shortcodeStart);
-    if (afterShortcodeStart.includes('>}}')) {
-      return null;
-    }
-
-    // Find >}} after cursor
-    const afterCursor = lineText.substring(cursorPos);
-    const shortcodeEndRelative = afterCursor.indexOf('>}}');
-
-    if (shortcodeEndRelative === -1) {
-      return null;
-    }
-
-    // Check if there's already a space before >}}
-    // If shortcodeEndRelative === 0, cursor is right before >}} with no space
-    const textBeforeEnd = afterCursor.substring(0, shortcodeEndRelative);
-    const hasSpaceBeforeEnd = shortcodeEndRelative > 0 && textBeforeEnd.endsWith(' ');
-
-    // Extract full content between "{{< fa" and ">}}"
-    const faEnd = shortcodeStart + '{{< fa'.length;
-    const shortcodeEnd = cursorPos + shortcodeEndRelative;
-    const fullContent = lineText.substring(faEnd, shortcodeEnd).trim();
-
-    // Find where content starts (skip spaces after "fa")
-    let contentStart = faEnd;
-    while (contentStart < cursorPos && lineText[contentStart] === ' ') {
-      contentStart++;
-    }
-    if (contentStart > cursorPos) {
-      contentStart = cursorPos;
-    }
-
-    // Content before cursor
-    const contentBeforeCursor = lineText.substring(faEnd, cursorPos);
-
-    // Check if there's a space immediately after "fa"
-    const hasSpaceAfterFa = lineText[faEnd] === ' ';
-
-    // Determine completion type and context
-    return this.analyzeContext(contentBeforeCursor, fullContent, contentStart, cursorPos, hasSpaceBeforeEnd, hasSpaceAfterFa);
-  }
-
-  /**
-   * Analyze the content to determine what type of completion to provide
-   */
-  private analyzeContext(
-    contentBeforeCursor: string,
-    fullContent: string,
-    contentStart: number,
-    cursorPos: number,
-    hasSpaceBeforeEnd: boolean,
-    hasSpaceAfterFa: boolean
-  ): ShortcodeContext {
-    const trimmedBefore = contentBeforeCursor.trim();
-
-    // Check if we're after an attribute= (completing a value)
-    const attrValueMatch = contentBeforeCursor.match(/(\w+)=([^\s]*)$/);
-    if (attrValueMatch) {
-      const attrName = attrValueMatch[1];
-      const typedValue = attrValueMatch[2].replace(/^["']/, ''); // Remove leading quote if present
-      const tokenStart = cursorPos - typedValue.length;
-
-      return {
-        fullContent,
-        contentStart,
-        completionType: 'attribute-value',
-        typedText: typedValue,
-        tokenStart,
-        attributeName: attrName,
-        hasSpaceBeforeEnd,
-        needsLeadingSpace: false // After '=', no leading space needed
-      };
-    }
-
-    // Check if an icon has been specified
-    const hasIcon = this.hasIconSpecified(trimmedBefore);
-
-    if (hasIcon) {
-      // After icon, suggest attributes
-      // Find what's being typed (last word after space)
-      const lastSpaceIndex = contentBeforeCursor.lastIndexOf(' ');
-      const typedText = lastSpaceIndex >= 0
-        ? contentBeforeCursor.substring(lastSpaceIndex + 1)
-        : '';
-      // tokenStart = cursor position minus the length of what's been typed
-      const tokenStart = cursorPos - typedText.length;
-
-      return {
-        fullContent,
-        contentStart,
-        completionType: 'attribute-name',
-        typedText,
-        tokenStart,
-        hasSpaceBeforeEnd,
-        needsLeadingSpace: false // After icon + space, no leading space needed
-      };
-    }
-
-    // No icon yet, suggest icons
-    // Need leading space if there's no space after "fa"
-    const tokenStart = contentStart;
-    const typedText = trimmedBefore;
-
-    return {
-      fullContent,
-      contentStart,
-      completionType: 'icon',
-      typedText,
-      tokenStart,
-      hasSpaceBeforeEnd,
-      needsLeadingSpace: !hasSpaceAfterFa
-    };
-  }
-
-  /**
-   * Check if an icon name has been specified in the content
-   */
-  private hasIconSpecified(content: string): boolean {
-    if (!content) {
-      return false;
-    }
-
-    const parts = content.split(/\s+/).filter(p => p && !p.includes('='));
-
-    // Check if first part is "brands"
-    if (parts[0] === 'brands') {
-      // Need at least "brands iconname"
-      return parts.length >= 2;
-    }
-
-    // Check if first part is a valid icon name
-    if (parts.length >= 1) {
-      const potentialIcon = parts[0];
-
-      // Don't treat known attribute names as icons
-      const attributeNames = ATTRIBUTES.map(a => a.name);
-      if (attributeNames.includes(potentialIcon)) {
-        return false;
-      }
-
-      // It's an icon if it's in our list or looks like an icon name
-      return FONTAWESOME_ICONS.includes(potentialIcon as any) ||
-             /^[a-z0-9-]+$/i.test(potentialIcon);
-    }
-
-    return false;
   }
 
   /**
@@ -268,14 +155,7 @@ export class FontAwesomeCompletionProvider implements vscode.CompletionItemProvi
   ): vscode.CompletionItem[] {
     const completions: vscode.CompletionItem[] = [];
     const typedText = context.typedText;
-
-    // Calculate the range to replace
-    const replaceRange = new vscode.Range(
-      position.line,
-      context.tokenStart,
-      position.line,
-      position.character
-    );
+    const replaceRange = createReplaceRange(position, context.tokenStart);
 
     for (const icon of FONTAWESOME_ICONS) {
       // Filter by typed text (case-insensitive prefix match)
@@ -320,21 +200,8 @@ export class FontAwesomeCompletionProvider implements vscode.CompletionItemProvi
   ): vscode.CompletionItem[] {
     const completions: vscode.CompletionItem[] = [];
     const typedText = context.typedText.toLowerCase();
-
-    // Find which attributes are already used
-    const usedAttributes = new Set<string>();
-    for (const attr of ATTRIBUTES) {
-      if (context.fullContent.includes(`${attr.name}=`)) {
-        usedAttributes.add(attr.name);
-      }
-    }
-
-    const replaceRange = new vscode.Range(
-      position.line,
-      context.tokenStart,
-      position.line,
-      position.character
-    );
+    const usedAttributes = getUsedAttributes(context.fullContent, ATTRIBUTES);
+    const replaceRange = createReplaceRange(position, context.tokenStart);
 
     for (const attr of ATTRIBUTES) {
       // Skip if already used
@@ -352,12 +219,12 @@ export class FontAwesomeCompletionProvider implements vscode.CompletionItemProvi
       item.documentation = new vscode.MarkdownString(attr.description);
       item.range = replaceRange;
 
-      if (attr.hasValues) {
+      if (attr.valueType === 'enum') {
         // For attributes with predefined values, add = and trigger suggestions
         item.insertText = new vscode.SnippetString(`${attr.name}=\$1`);
         item.command = {
           command: 'editor.action.triggerSuggest',
-          title: 'Trigger Suggest'
+          title: 'Trigger Suggest',
         };
       } else {
         // For free-form attributes like title, add ="" with cursor inside
@@ -385,16 +252,9 @@ export class FontAwesomeCompletionProvider implements vscode.CompletionItemProvi
 
     const completions: vscode.CompletionItem[] = [];
     const typedText = context.typedText.toLowerCase();
-
-    const replaceRange = new vscode.Range(
-      position.line,
-      context.tokenStart,
-      position.line,
-      position.character
-    );
+    const replaceRange = createReplaceRange(position, context.tokenStart);
 
     for (const size of SIZE_VALUES) {
-      // Filter by typed text
       if (typedText && !size.value.toLowerCase().startsWith(typedText)) {
         continue;
       }

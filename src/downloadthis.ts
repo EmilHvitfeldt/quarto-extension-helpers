@@ -1,26 +1,25 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import { ShortcodeContext, AttributeDefinition } from './types';
+import {
+  getShortcodeContext,
+  analyzeShortcodeContext,
+  createReplaceRange,
+  createAttributeNameCompletions,
+  createEnumValueCompletions,
+} from './shortcode-provider';
 
-type ValueType = 'string' | 'enum';
-
-interface DownloadthisAttribute {
-  name: string;
-  description: string;
-  valueType: ValueType;
-  values?: string[];
-  defaultValue?: string;
-  placeholder?: string;
-  quoted?: boolean;
-}
+/** Shortcode name constant */
+const SHORTCODE_NAME = 'downloadthis';
 
 /** Downloadthis shortcode attributes */
-const DOWNLOADTHIS_ATTRIBUTES: DownloadthisAttribute[] = [
+const ATTRIBUTES: AttributeDefinition[] = [
   {
     name: 'dname',
     description: 'The filename (without file extension) which will be assigned to the downloaded file',
     valueType: 'string',
     defaultValue: 'file',
-    placeholder: 'my-file'
+    placeholder: 'my-file',
   },
   {
     name: 'label',
@@ -28,52 +27,66 @@ const DOWNLOADTHIS_ATTRIBUTES: DownloadthisAttribute[] = [
     valueType: 'string',
     defaultValue: 'Download',
     placeholder: 'Download Data',
-    quoted: true
+    quoted: true,
   },
   {
     name: 'icon',
     description: 'Bootstrap Icon for the button',
     valueType: 'string',
     defaultValue: 'download',
-    placeholder: 'file-earmark-arrow-down'
+    placeholder: 'file-earmark-arrow-down',
   },
   {
     name: 'type',
     description: 'Button styling variant',
     valueType: 'enum',
     values: ['default', 'primary', 'secondary', 'success', 'warning', 'danger', 'info', 'light', 'dark'],
-    defaultValue: 'default'
+    defaultValue: 'default',
   },
   {
     name: 'class',
     description: 'CSS class applied to the button',
     valueType: 'string',
-    placeholder: 'my-button-class'
+    placeholder: 'my-button-class',
   },
   {
     name: 'id',
     description: 'CSS identifier for the button',
     valueType: 'string',
-    placeholder: 'my-button-id'
-  }
+    placeholder: 'my-button-id',
+  },
 ];
 
 /** Map for O(1) attribute lookup */
-const DOWNLOADTHIS_ATTRIBUTES_MAP = new Map<string, DownloadthisAttribute>(
-  DOWNLOADTHIS_ATTRIBUTES.map(attr => [attr.name, attr])
+const ATTRIBUTES_MAP = new Map<string, AttributeDefinition>(
+  ATTRIBUTES.map(attr => [attr.name, attr])
 );
 
-type CompletionType = 'file' | 'attribute-name' | 'attribute-value';
+/** Attribute names set for quick lookup */
+const ATTRIBUTE_NAMES = new Set(ATTRIBUTES.map(a => a.name));
 
-interface ShortcodeContext {
-  fullContent: string;
-  contentStart: number;
-  completionType: CompletionType;
-  typedText: string;
-  tokenStart: number;
-  attributeName?: string;
-  hasSpaceBeforeEnd: boolean;
-  needsLeadingSpace: boolean;
+/**
+ * Check if a file path has been specified in the content
+ */
+function hasFileSpecified(content: string): boolean {
+  if (!content) {
+    return false;
+  }
+
+  const parts = content.split(/\s+/).filter(p => p && !p.includes('='));
+
+  if (parts.length >= 1) {
+    const potentialFile = parts[0];
+
+    // Don't treat known attribute names as files
+    if (ATTRIBUTE_NAMES.has(potentialFile)) {
+      return false;
+    }
+
+    return potentialFile.length > 0;
+  }
+
+  return false;
 }
 
 /**
@@ -92,175 +105,36 @@ export class DownloadthisCompletionProvider implements vscode.CompletionItemProv
   ): Promise<vscode.CompletionItem[] | undefined> {
     const lineText = document.lineAt(position).text;
 
-    const shortcodeContext = this.getShortcodeContext(lineText, position.character);
-    if (!shortcodeContext) {
+    const baseContext = getShortcodeContext(lineText, position.character, SHORTCODE_NAME);
+    if (!baseContext) {
       return undefined;
     }
 
-    switch (shortcodeContext.completionType) {
+    // Get content before cursor for analysis
+    const marker = `{{< ${SHORTCODE_NAME}`;
+    const markerEnd = lineText.lastIndexOf(marker) + marker.length;
+    const contentBeforeCursor = lineText.substring(markerEnd, position.character);
+    const hasSpaceAfterName = lineText[markerEnd] === ' ';
+
+    const context = analyzeShortcodeContext(
+      baseContext,
+      contentBeforeCursor,
+      position.character,
+      hasSpaceAfterName,
+      hasFileSpecified,
+      'file'
+    );
+
+    switch (context.completionType) {
       case 'file':
-        return this.getFileCompletions(shortcodeContext, position, document);
+        return this.getFileCompletions(context, position, document);
       case 'attribute-name':
-        return this.getAttributeNameCompletions(shortcodeContext, position);
+        return createAttributeNameCompletions(ATTRIBUTES, context, position);
       case 'attribute-value':
-        return this.getAttributeValueCompletions(shortcodeContext, position);
+        return this.getAttributeValueCompletions(context, position);
       default:
         return undefined;
     }
-  }
-
-  /**
-   * Find the shortcode context if cursor is inside {{< downloadthis ... >}}
-   */
-  private getShortcodeContext(lineText: string, cursorPos: number): ShortcodeContext | null {
-    const beforeCursor = lineText.substring(0, cursorPos);
-    const shortcodeStart = beforeCursor.lastIndexOf('{{< downloadthis');
-
-    if (shortcodeStart === -1) {
-      return null;
-    }
-
-    // Check that we haven't closed this shortcode before cursor
-    const afterShortcodeStart = beforeCursor.substring(shortcodeStart);
-    if (afterShortcodeStart.includes('>}}')) {
-      return null;
-    }
-
-    // Find >}} after cursor
-    const afterCursor = lineText.substring(cursorPos);
-    const shortcodeEndRelative = afterCursor.indexOf('>}}');
-
-    if (shortcodeEndRelative === -1) {
-      return null;
-    }
-
-    // Check if there's already a space before >}}
-    const textBeforeEnd = afterCursor.substring(0, shortcodeEndRelative);
-    const hasSpaceBeforeEnd = shortcodeEndRelative > 0 && textBeforeEnd.endsWith(' ');
-
-    // Extract full content between "{{< downloadthis" and ">}}"
-    const downloadthisEnd = shortcodeStart + '{{< downloadthis'.length;
-    const shortcodeEnd = cursorPos + shortcodeEndRelative;
-    const fullContent = lineText.substring(downloadthisEnd, shortcodeEnd).trim();
-
-    // Find where content starts (skip spaces after "downloadthis")
-    let contentStart = downloadthisEnd;
-    while (contentStart < cursorPos && lineText[contentStart] === ' ') {
-      contentStart++;
-    }
-    if (contentStart > cursorPos) {
-      contentStart = cursorPos;
-    }
-
-    // Content before cursor
-    const contentBeforeCursor = lineText.substring(downloadthisEnd, cursorPos);
-
-    // Check if there's a space immediately after "downloadthis"
-    const hasSpaceAfterDownloadthis = lineText[downloadthisEnd] === ' ';
-
-    return this.analyzeContext(
-      contentBeforeCursor,
-      fullContent,
-      contentStart,
-      cursorPos,
-      hasSpaceBeforeEnd,
-      hasSpaceAfterDownloadthis
-    );
-  }
-
-  /**
-   * Analyze the content to determine what type of completion to provide
-   */
-  private analyzeContext(
-    contentBeforeCursor: string,
-    fullContent: string,
-    contentStart: number,
-    cursorPos: number,
-    hasSpaceBeforeEnd: boolean,
-    hasSpaceAfterDownloadthis: boolean
-  ): ShortcodeContext {
-    // Check if we're after an attribute= (completing a value)
-    const attrValueMatch = contentBeforeCursor.match(/(\w+)=([^\s]*)$/);
-    if (attrValueMatch) {
-      const attrName = attrValueMatch[1];
-      const typedValue = attrValueMatch[2].replace(/^["']/, '');
-      const tokenStart = cursorPos - typedValue.length;
-
-      return {
-        fullContent,
-        contentStart,
-        completionType: 'attribute-value',
-        typedText: typedValue,
-        tokenStart,
-        attributeName: attrName,
-        hasSpaceBeforeEnd,
-        needsLeadingSpace: false
-      };
-    }
-
-    // Check if a file has been specified (first non-attribute token)
-    const hasFile = this.hasFileSpecified(contentBeforeCursor.trim());
-
-    if (hasFile) {
-      // After file, suggest attributes
-      const lastSpaceIndex = contentBeforeCursor.lastIndexOf(' ');
-      const typedText = lastSpaceIndex >= 0
-        ? contentBeforeCursor.substring(lastSpaceIndex + 1)
-        : contentBeforeCursor.trim();
-      const tokenStart = cursorPos - typedText.length;
-
-      return {
-        fullContent,
-        contentStart,
-        completionType: 'attribute-name',
-        typedText,
-        tokenStart,
-        hasSpaceBeforeEnd,
-        needsLeadingSpace: false
-      };
-    }
-
-    // No file yet, suggest files
-    const typedText = contentBeforeCursor.trim();
-    const tokenStart = contentStart;
-
-    return {
-      fullContent,
-      contentStart,
-      completionType: 'file',
-      typedText,
-      tokenStart,
-      hasSpaceBeforeEnd,
-      needsLeadingSpace: !hasSpaceAfterDownloadthis
-    };
-  }
-
-  /**
-   * Check if a file path has been specified in the content
-   */
-  private hasFileSpecified(content: string): boolean {
-    if (!content) {
-      return false;
-    }
-
-    const parts = content.split(/\s+/).filter(p => p && !p.includes('='));
-
-    // If there's at least one non-attribute part, it's the file
-    if (parts.length >= 1) {
-      const potentialFile = parts[0];
-
-      // Don't treat known attribute names as files
-      const attributeNames = DOWNLOADTHIS_ATTRIBUTES.map(a => a.name);
-      if (attributeNames.includes(potentialFile)) {
-        return false;
-      }
-
-      // It looks like a file if it contains a dot (extension) or slash (path)
-      // or is any non-empty string that's not an attribute name
-      return potentialFile.length > 0;
-    }
-
-    return false;
   }
 
   /**
@@ -273,13 +147,7 @@ export class DownloadthisCompletionProvider implements vscode.CompletionItemProv
   ): Promise<vscode.CompletionItem[]> {
     const completions: vscode.CompletionItem[] = [];
     const typedText = context.typedText;
-
-    const replaceRange = new vscode.Range(
-      position.line,
-      context.tokenStart,
-      position.line,
-      position.character
-    );
+    const replaceRange = createReplaceRange(position, context.tokenStart);
 
     // Get the directory of the current document
     const documentDir = path.dirname(document.uri.fsPath);
@@ -324,21 +192,17 @@ export class DownloadthisCompletionProvider implements vscode.CompletionItemProv
 
         item.detail = isDirectory ? 'Directory' : 'File';
         item.range = replaceRange;
-
-        // Sort directories first, then files
         item.sortText = (isDirectory ? '0' : '1') + name;
 
         const leadingSpace = context.needsLeadingSpace ? ' ' : '';
 
         if (isDirectory) {
-          // For directories, add trailing slash and trigger more completions
           item.insertText = leadingSpace + fullPath + '/';
           item.command = {
             command: 'editor.action.triggerSuggest',
-            title: 'Trigger Suggest'
+            title: 'Trigger Suggest',
           };
         } else {
-          // For files, add trailing space
           const trailingSpace = context.hasSpaceBeforeEnd ? '' : ' ';
           item.insertText = leadingSpace + fullPath + trailingSpace;
         }
@@ -353,129 +217,17 @@ export class DownloadthisCompletionProvider implements vscode.CompletionItemProv
   }
 
   /**
-   * Get attribute name completions
-   */
-  private getAttributeNameCompletions(
-    context: ShortcodeContext,
-    position: vscode.Position
-  ): vscode.CompletionItem[] {
-    const completions: vscode.CompletionItem[] = [];
-    const typedText = context.typedText.toLowerCase();
-
-    // Find which attributes are already used
-    const usedAttributes = new Set<string>();
-    for (const attr of DOWNLOADTHIS_ATTRIBUTES) {
-      if (context.fullContent.includes(`${attr.name}=`)) {
-        usedAttributes.add(attr.name);
-      }
-    }
-
-    const replaceRange = new vscode.Range(
-      position.line,
-      context.tokenStart,
-      position.line,
-      position.character
-    );
-
-    for (let i = 0; i < DOWNLOADTHIS_ATTRIBUTES.length; i++) {
-      const attr = DOWNLOADTHIS_ATTRIBUTES[i];
-
-      // Skip if already used
-      if (usedAttributes.has(attr.name)) {
-        continue;
-      }
-
-      // Filter by typed text
-      if (typedText && !attr.name.toLowerCase().startsWith(typedText)) {
-        continue;
-      }
-
-      const item = new vscode.CompletionItem(attr.name, vscode.CompletionItemKind.Property);
-      item.detail = 'Attribute';
-
-      // Build documentation
-      let doc = attr.description;
-      if (attr.defaultValue !== undefined) {
-        doc += `\n\nDefault: \`${attr.defaultValue}\``;
-      }
-      if (attr.values && attr.values.length > 0) {
-        doc += `\n\nValues: ${attr.values.map(v => `\`${v}\``).join(', ')}`;
-      }
-      item.documentation = new vscode.MarkdownString(doc);
-
-      item.range = replaceRange;
-      item.sortText = String(i).padStart(2, '0');
-
-      const leadingSpace = context.needsLeadingSpace ? ' ' : '';
-
-      if (attr.valueType === 'enum') {
-        // Trigger suggestions for values
-        item.insertText = new vscode.SnippetString(`${leadingSpace}${attr.name}=\$1`);
-        item.command = {
-          command: 'editor.action.triggerSuggest',
-          title: 'Trigger Suggest'
-        };
-      } else if (attr.quoted) {
-        // Quoted value with placeholder inside quotes
-        const placeholder = attr.placeholder || '';
-        const trailingSpace = context.hasSpaceBeforeEnd ? '' : ' ';
-        item.insertText = new vscode.SnippetString(`${leadingSpace}${attr.name}="\${1:${placeholder}}"${trailingSpace}`);
-      } else {
-        // Free-form value with placeholder
-        const placeholder = attr.placeholder || '';
-        const trailingSpace = context.hasSpaceBeforeEnd ? '' : ' ';
-        item.insertText = new vscode.SnippetString(`${leadingSpace}${attr.name}=\${1:${placeholder}}${trailingSpace}`);
-      }
-
-      completions.push(item);
-    }
-
-    return completions;
-  }
-
-  /**
    * Get attribute value completions
    */
   private getAttributeValueCompletions(
     context: ShortcodeContext,
     position: vscode.Position
   ): vscode.CompletionItem[] {
-    const attr = DOWNLOADTHIS_ATTRIBUTES_MAP.get(context.attributeName || '');
+    const attr = ATTRIBUTES_MAP.get(context.attributeName || '');
     if (!attr || !attr.values || attr.values.length === 0) {
       return [];
     }
 
-    const completions: vscode.CompletionItem[] = [];
-    const typedText = context.typedText.toLowerCase();
-
-    const replaceRange = new vscode.Range(
-      position.line,
-      context.tokenStart,
-      position.line,
-      position.character
-    );
-
-    for (const value of attr.values) {
-      if (typedText && !value.toLowerCase().startsWith(typedText)) {
-        continue;
-      }
-
-      const item = new vscode.CompletionItem(value, vscode.CompletionItemKind.Value);
-      item.range = replaceRange;
-
-      if (value === attr.defaultValue) {
-        item.detail = '(default)';
-        item.sortText = '0' + value;
-      } else {
-        item.sortText = '1' + value;
-      }
-
-      const trailingSpace = context.hasSpaceBeforeEnd ? '' : ' ';
-      item.insertText = value + trailingSpace;
-
-      completions.push(item);
-    }
-
-    return completions;
+    return createEnumValueCompletions(attr.values, context, position, attr.defaultValue);
   }
 }
