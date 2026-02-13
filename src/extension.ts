@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
 
-// Import providers from each Quarto extension helper
+// Roughnotation uses span syntax, so it's still hardcoded
 import { RoughNotationCompletionProvider, RoughNotationColorProvider } from './roughnotation';
-import { FontAwesomeCompletionProvider } from './fontawesome';
-import { CountdownCompletionProvider } from './countdown';
-import { DownloadthisCompletionProvider } from './downloadthis';
-import { AcronymsCompletionProvider } from './acronyms';
-import { NowCompletionProvider } from './now';
+
+// Spec-based providers
+import { loadAllSpecs } from './spec-loader';
+import { createSpecProvider } from './spec-provider';
+
 import { logger } from './logger';
 import { CONFIG } from './constants';
 
@@ -30,9 +30,9 @@ interface ProviderConfig {
 }
 
 /**
- * All registered providers
+ * Hardcoded providers (for non-shortcode syntax like roughnotation)
  */
-const PROVIDERS: ProviderConfig[] = [
+const HARDCODED_PROVIDERS: ProviderConfig[] = [
   {
     configKey: 'roughnotation',
     createProvider: () => new RoughNotationCompletionProvider(),
@@ -47,32 +47,38 @@ const PROVIDERS: ProviderConfig[] = [
       },
     ],
   },
-  {
-    configKey: 'fontawesome',
-    createProvider: () => new FontAwesomeCompletionProvider(),
-    triggerCharacters: [' ', '<', '='],
-  },
-  {
-    configKey: 'countdown',
-    createProvider: () => new CountdownCompletionProvider(),
-    triggerCharacters: [' ', '='],
-  },
-  {
-    configKey: 'downloadthis',
-    createProvider: () => new DownloadthisCompletionProvider(),
-    triggerCharacters: [' ', '='],
-  },
-  {
-    configKey: 'acronyms',
-    createProvider: () => new AcronymsCompletionProvider(),
-    triggerCharacters: [' '],
-  },
-  {
-    configKey: 'now',
-    createProvider: () => new NowCompletionProvider(),
-    triggerCharacters: [' '],
-  },
 ];
+
+/**
+ * Map shortcode names to config keys
+ */
+const SHORTCODE_CONFIG_MAP: Record<string, string> = {
+  fa: 'fontawesome',
+  countdown: 'countdown',
+  downloadthis: 'downloadthis',
+  acr: 'acronyms',
+  now: 'now',
+};
+
+/**
+ * Build providers from specs
+ */
+function buildSpecProviders(): ProviderConfig[] {
+  const providers: ProviderConfig[] = [];
+  const specs = loadAllSpecs();
+
+  for (const spec of specs) {
+    const configKey = SHORTCODE_CONFIG_MAP[spec.shortcode] || spec.shortcode;
+
+    providers.push({
+      configKey,
+      createProvider: () => createSpecProvider(spec),
+      triggerCharacters: [' ', '='],
+    });
+  }
+
+  return providers;
+}
 
 export function activate(context: vscode.ExtensionContext): void {
   // Initialize logger
@@ -82,8 +88,12 @@ export function activate(context: vscode.ExtensionContext): void {
   const quartoSelector: vscode.DocumentSelector = { language: 'quarto', scheme: 'file' };
   const config = vscode.workspace.getConfiguration(CONFIG.ROOT);
 
+  // Combine hardcoded and spec-based providers
+  const specProviders = buildSpecProviders();
+  const allProviders = [...HARDCODED_PROVIDERS, ...specProviders];
+
   let enabledCount = 0;
-  for (const providerConfig of PROVIDERS) {
+  for (const providerConfig of allProviders) {
     if (config.get<boolean>(`${providerConfig.configKey}.enabled`, true)) {
       // Register the main completion provider
       context.subscriptions.push(

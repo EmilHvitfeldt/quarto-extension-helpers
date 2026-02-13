@@ -38,7 +38,8 @@
   "main": "./out/extension.js",
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "compile": "tsc -p ./ && npm run copy-specs",
+    "copy-specs": "mkdir -p out/specs && cp src/specs/*.yaml out/specs/",
     "watch": "tsc -watch -p ./",
     "lint": "eslint src --ext ts",
     "test:unit": "mocha --require ts-node/register 'src/test/unit/**/*.test.ts'",
@@ -100,7 +101,11 @@
       }
     }
   },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  },
   "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
     "@types/mocha": "^10.0.0",
     "@types/node": "^20.x",
     "@types/vscode": "^1.85.0",
