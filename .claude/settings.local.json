@@ -19,7 +19,9 @@
       "Bash(git add:*)",
       "WebFetch(domain:code.visualstudio.com)",
       "Bash(npm run test:unit:*)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nadd unit tests for frontmatter parsing\n\n- Test basic frontmatter detection \\(no frontmatter, unclosed, key not found\\)\n- Test acronyms.keys pattern with shortname and longname extraction\n- Test single-level keys, quoted values, and indentation handling\n- Test edge cases: empty sections, document-only frontmatter, multiple\n  occurrences of keys in different contexts\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }

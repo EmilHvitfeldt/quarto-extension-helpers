@@ -6,12 +6,27 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
 import { ShortcodeSpec } from './spec-types';
+import { CACHE } from './constants';
 
-/** Cache for loaded specs */
+/** Cache for loaded specs (with size limit) */
 const specCache = new Map<string, ShortcodeSpec>();
 
-/** Cache for file-data sources */
+/** Cache for file-data sources (with size limit) */
 const fileDataCache = new Map<string, string[]>();
+
+/**
+ * Add to cache with size limit enforcement
+ */
+function addToCache<T>(cache: Map<string, T>, key: string, value: T, maxSize: number): void {
+  // Evict oldest entry if at capacity
+  if (cache.size >= maxSize) {
+    const firstKey = cache.keys().next().value;
+    if (firstKey) {
+      cache.delete(firstKey);
+    }
+  }
+  cache.set(key, value);
+}
 
 /**
  * Get the project root directory
@@ -49,7 +64,7 @@ export function loadSpec(shortcodeName: string): ShortcodeSpec | null {
   try {
     const content = fs.readFileSync(specPath, 'utf-8');
     const spec = yaml.load(content) as ShortcodeSpec;
-    specCache.set(shortcodeName, spec);
+    addToCache(specCache, shortcodeName, spec, CACHE.MAX_SPEC_ENTRIES);
     return spec;
   } catch {
     return null;
@@ -128,7 +143,7 @@ export function loadFileData(source: string, dataPath: string): string[] {
     }
 
     if (Array.isArray(result)) {
-      fileDataCache.set(cacheKey, result);
+      addToCache(fileDataCache, cacheKey, result, CACHE.MAX_FILE_DATA_ENTRIES);
       return result;
     }
 

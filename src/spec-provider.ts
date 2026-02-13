@@ -13,6 +13,7 @@ import {
   FileDataCompletion,
   FrontmatterCompletion,
   FreeformCompletion,
+  WorkspaceFileCompletion,
 } from './spec-types';
 import { loadFileData } from './spec-loader';
 import {
@@ -325,6 +326,16 @@ class SpecCompletionProvider implements vscode.CompletionItemProvider {
           document
         );
 
+      case 'workspace-file':
+        return this.createWorkspaceFileCompletions(
+          completion as WorkspaceFileCompletion,
+          typedText,
+          replaceRange,
+          leadingSpace,
+          trailingSpace,
+          document
+        );
+
       case 'freeform':
       case 'none':
       default:
@@ -591,6 +602,181 @@ class SpecCompletionProvider implements vscode.CompletionItemProvider {
     }
 
     return completions;
+  }
+
+  /**
+   * Create workspace-file-based completions
+   * Searches for a specific file in the workspace and extracts values from it
+   */
+  private async createWorkspaceFileCompletions(
+    completion: WorkspaceFileCompletion,
+    typedText: string,
+    replaceRange: vscode.Range,
+    leadingSpace: string,
+    trailingSpace: string,
+    document: vscode.TextDocument
+  ): Promise<vscode.CompletionItem[]> {
+    const completions: vscode.CompletionItem[] = [];
+
+    // Find the workspace file by walking up from document directory
+    const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+    if (!workspaceFolder) {
+      return completions;
+    }
+
+    const fileUri = await this.findWorkspaceFile(
+      document.uri,
+      workspaceFolder.uri,
+      completion.filename
+    );
+    if (!fileUri) {
+      return completions;
+    }
+
+    try {
+      const content = await vscode.workspace.fs.readFile(fileUri);
+      const text = Buffer.from(content).toString('utf-8');
+      const values = this.parseWorkspaceFileValues(text, completion.path);
+
+      for (const value of values) {
+        if (typedText && !value.toLowerCase().startsWith(typedText)) {
+          continue;
+        }
+
+        const item = new vscode.CompletionItem(value, vscode.CompletionItemKind.Variable);
+        item.detail = `From ${completion.filename}`;
+        item.range = replaceRange;
+        item.insertText = leadingSpace + value + trailingSpace;
+        completions.push(item);
+      }
+    } catch {
+      // File can't be read
+    }
+
+    return completions;
+  }
+
+  /**
+   * Find a workspace file by searching from document directory up to workspace root
+   */
+  private async findWorkspaceFile(
+    documentUri: vscode.Uri,
+    workspaceUri: vscode.Uri,
+    filename: string
+  ): Promise<vscode.Uri | null> {
+    let currentDir = vscode.Uri.joinPath(documentUri, '..');
+    const workspacePath = workspaceUri.path;
+
+    while (currentDir.path === workspacePath || currentDir.path.startsWith(workspacePath + '/')) {
+      const targetFile = vscode.Uri.joinPath(currentDir, filename);
+      try {
+        await vscode.workspace.fs.stat(targetFile);
+        return targetFile;
+      } catch {
+        // File doesn't exist, try parent directory
+      }
+
+      const parentDir = vscode.Uri.joinPath(currentDir, '..');
+      if (parentDir.path === currentDir.path) {
+        break;
+      }
+      currentDir = parentDir;
+    }
+
+    return null;
+  }
+
+  /**
+   * Parse values from a workspace file (YAML/JSON)
+   */
+  private parseWorkspaceFileValues(content: string, dataPath: string): string[] {
+    const values: string[] = [];
+
+    // Try to parse as JSON first
+    try {
+      const data = JSON.parse(content);
+      return this.extractValuesFromPath(data, dataPath);
+    } catch {
+      // Not JSON, try YAML-style parsing
+    }
+
+    // Simple YAML parsing for the specified path
+    const pathParts = dataPath.split('.');
+    let currentIndent = -1;
+    let inTargetSection = false;
+    let sectionDepth = 0;
+
+    const lines = content.split('\n');
+
+    for (const line of lines) {
+      const trimmed = line.trimStart();
+      const indent = line.length - trimmed.length;
+
+      // Check for section headers
+      let matchedHeader = false;
+      for (let i = 0; i < pathParts.length; i++) {
+        const pattern = new RegExp(`^${pathParts[i]}:\\s*$`);
+        if (pattern.test(trimmed) && sectionDepth === i) {
+          sectionDepth++;
+          matchedHeader = true;
+          if (sectionDepth === pathParts.length) {
+            inTargetSection = true;
+            currentIndent = indent;
+          }
+          break;
+        }
+      }
+
+      if (matchedHeader) {
+        continue;
+      }
+
+      // Parse values in target section
+      if (inTargetSection && indent > currentIndent) {
+        // Match "- value" for list items or "key: value" for map entries
+        const listMatch = trimmed.match(/^-\s+["']?([^"':\n]+)["']?\s*$/);
+        if (listMatch) {
+          values.push(listMatch[1].trim());
+          continue;
+        }
+
+        // Match "key:" to get map keys
+        const keyMatch = trimmed.match(/^([a-zA-Z0-9_-]+):\s*/);
+        if (keyMatch) {
+          values.push(keyMatch[1]);
+        }
+      } else if (inTargetSection && indent <= currentIndent && trimmed.length > 0) {
+        break;
+      }
+    }
+
+    return values;
+  }
+
+  /**
+   * Extract values from a nested path in an object
+   */
+  private extractValuesFromPath(data: unknown, dataPath: string): string[] {
+    const pathParts = dataPath.split('.');
+    let current: unknown = data;
+
+    for (const part of pathParts) {
+      if (current && typeof current === 'object' && part in current) {
+        current = (current as Record<string, unknown>)[part];
+      } else {
+        return [];
+      }
+    }
+
+    if (Array.isArray(current)) {
+      return current.filter((v): v is string => typeof v === 'string');
+    }
+
+    if (current && typeof current === 'object') {
+      return Object.keys(current);
+    }
+
+    return [];
   }
 
 }

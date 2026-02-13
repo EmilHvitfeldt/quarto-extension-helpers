@@ -14,7 +14,7 @@ import {
   findNamedColor,
   findBrandColorName,
 } from './color-utils';
-import { FILTER } from './constants';
+import { FILTER, CACHE } from './constants';
 
 /** Filter name constant */
 const FILTER_NAME = FILTER.ROUGHNOTATION;
@@ -391,7 +391,15 @@ export class RoughNotationColorProvider implements vscode.DocumentColorProvider 
     }
 
     const brandColors = await getBrandColors(document);
-    this.brandColorsCache.set(document.uri.toString(), brandColors);
+    // Enforce cache size limit
+    const cacheKey = document.uri.toString();
+    if (this.brandColorsCache.size >= CACHE.MAX_BRAND_COLOR_ENTRIES) {
+      const firstKey = this.brandColorsCache.keys().next().value;
+      if (firstKey) {
+        this.brandColorsCache.delete(firstKey);
+      }
+    }
+    this.brandColorsCache.set(cacheKey, brandColors);
 
     const colors: vscode.ColorInformation[] = [];
     const text = document.getText();

@@ -27,6 +27,8 @@ export const CACHE = {
   MAX_FILTER_ENTRIES: 100,
   MAX_BRAND_COLOR_ENTRIES: 50,
   MAX_ACRONYM_ENTRIES: 100,
+  MAX_SPEC_ENTRIES: 20,
+  MAX_FILE_DATA_ENTRIES: 20,
 } as const;
 
 /** File names */
