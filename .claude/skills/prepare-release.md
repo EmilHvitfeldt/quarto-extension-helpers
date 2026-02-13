@@ -63,6 +63,7 @@ Verify these items are complete:
 - [ ] CONTRIBUTING.md is up to date with new architecture
 - [ ] No TypeScript compilation errors (`npm run compile`)
 - [ ] No ESLint errors (`npm run lint`)
+- [ ] All unit tests pass (`npm run test:unit`)
 - [ ] Extension tested in development host (F5)
 - [ ] `[Unreleased]` section in CHANGELOG.md has content to release
 

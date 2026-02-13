@@ -13,7 +13,12 @@
       "WebFetch(domain:pkg.garrickadenbuie.com)",
       "Bash(gh api:*)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run lint:*)",
+      "Bash(git add:*)",
+      "WebFetch(domain:code.visualstudio.com)",
+      "Bash(npm run test:unit:*)"
     ]
   }
 }

@@ -129,7 +129,10 @@ Add entry under `[Unreleased]`:
 
 ### 8. Compile and Verify
 
-Run `npm run compile` and `npm run lint` to verify there are no errors.
+Run the following commands to verify there are no errors:
+- `npm run compile` - TypeScript compilation
+- `npm run lint` - ESLint checks
+- `npm run test:unit` - Unit tests for shared utilities
 
 ## Example
 

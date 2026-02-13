@@ -218,7 +218,42 @@ Create an extension-specific example folder:
 - `examples/<extension-name>/with-brandyml/demo.qmd` - Color demo (if has colors)
 - `examples/<extension-name>/with-brandyml/_brand.yml` - Brand colors
 
-### 7. Update Documentation (MANDATORY)
+### 7. Add Tests
+
+If the extension adds new pure functions (functions without VS Code dependencies), add unit tests.
+
+**Test file location:** `src/test/unit/`
+
+**Existing test coverage:**
+- `shortcode-context.test.ts` - Tests for `getShortcodeContext`
+- `context-analysis.test.ts` - Tests for `analyzeShortcodeContext`, `analyzeAttributeOnlyContext`
+- `spacing.test.ts` - Tests for spacing behavior
+- `completions.test.ts` - Tests for `getUsedAttributes`, `filterByPrefix`, value filtering
+
+**When to add tests:**
+- If adding new pure utility functions to `src/shortcode-utils.ts`
+- If the extension has custom parsing logic that can be extracted into testable functions
+- If adding extension-specific value lists (like `NOW_ALIASES` in `now.ts`)
+
+**Example test for extension-specific values:**
+```typescript
+// src/test/unit/<extension-name>.test.ts
+import * as assert from 'assert';
+import { filterByPrefix } from '../../shortcode-utils';
+
+describe('<ExtensionName> completions', () => {
+  const VALUES = ['value1', 'value2', 'value3'];
+
+  it('filters values by prefix', () => {
+    const filtered = filterByPrefix(VALUES, 'val');
+    assert.strictEqual(filtered.length, 3);
+  });
+});
+```
+
+**Note:** Most extensions using shared utilities don't need new tests since the shared functions are already tested.
+
+### 8. Update Documentation (MANDATORY)
 
 #### Update `README.md`:
 1. Add to "Supported Extensions" list
@@ -228,11 +263,14 @@ Create an extension-specific example folder:
 #### Update `CHANGELOG.md`:
 Add entry under `[Unreleased]`
 
-### 8. Compile and Verify
+### 9. Compile and Verify
 
-Run `npm run compile` and `npm run lint` to verify no errors.
+Run the following commands to verify no errors:
+- `npm run compile` - TypeScript compilation
+- `npm run lint` - ESLint checks
+- `npm run test:unit` - Unit tests for shared utilities
 
-### 9. Final Checklist
+### 10. Final Checklist
 
 - [ ] `src/<extension-name>.ts` created using shared utilities
 - [ ] Constants added to `src/constants.ts`
@@ -241,5 +279,7 @@ Run `npm run compile` and `npm run lint` to verify no errors.
 - [ ] Example files created
 - [ ] `README.md` updated
 - [ ] `CHANGELOG.md` updated
+- [ ] Tests added (if new pure functions were created)
 - [ ] `npm run compile` succeeds
 - [ ] `npm run lint` succeeds
+- [ ] `npm run test:unit` succeeds

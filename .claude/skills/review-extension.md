@@ -40,6 +40,7 @@ When the user runs this skill, perform a comprehensive review by reading:
 - [ ] JSDoc comments on exported classes
 - [ ] No unused imports or variables
 - [ ] Passes `npm run lint`
+- [ ] Passes `npm run test:unit`
 
 ### 3. Completion Provider Checks
 
