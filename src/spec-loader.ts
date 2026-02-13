@@ -14,12 +14,23 @@ const specCache = new Map<string, ShortcodeSpec>();
 const fileDataCache = new Map<string, string[]>();
 
 /**
+ * Get the project root directory
+ * Works in both ts-node (src/) and compiled (out/) contexts
+ */
+function getProjectRoot(): string {
+  // __dirname is either src/ or out/ depending on context
+  // Go up one level to get project root
+  return path.join(__dirname, '..');
+}
+
+/**
  * Get the specs directory path
- * In development: src/specs/
+ * In development (ts-node): src/specs/
  * In production: out/specs/ (copied during build)
  */
 function getSpecsDir(): string {
   // __dirname is out/ in production, so specs are at out/specs/
+  // __dirname is src/ in ts-node, so specs are at src/specs/
   return path.join(__dirname, 'specs');
 }
 
@@ -83,9 +94,27 @@ export function loadFileData(source: string, dataPath: string): string[] {
   }
 
   try {
-    // __dirname is out/, so data files are at out/data/
-    const sourcePath = path.join(__dirname, source);
-    const content = fs.readFileSync(sourcePath, 'utf-8');
+    // Try multiple locations:
+    // 1. out/data/ (production - compiled)
+    // 2. data/ from project root (development/testing)
+    const possiblePaths = [
+      path.join(__dirname, source),           // out/data/file.json
+      path.join(getProjectRoot(), source),    // data/file.json from root
+    ];
+
+    let content: string | null = null;
+    for (const tryPath of possiblePaths) {
+      try {
+        content = fs.readFileSync(tryPath, 'utf-8');
+        break;
+      } catch {
+        // Try next path
+      }
+    }
+
+    if (!content) {
+      return [];
+    }
     const data = JSON.parse(content);
 
     // Navigate to the specified path
