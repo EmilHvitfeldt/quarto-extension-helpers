@@ -230,11 +230,9 @@ After typing `type=`, get suggestions for button styles:
 
 Provides intelligent autocomplete for [acronyms](https://github.com/rchaput/acronyms) shortcodes.
 
-#### Shortname Autocomplete
-
 Type inside `{{< acr ... >}}` shortcodes to get suggestions for acronyms defined in your document's frontmatter:
 
-<!-- TODO: Add gif showing acronym autocomplete -->
+![](images/acronyms.gif)
 
 The extension reads acronym definitions from the `acronyms.keys` section of your YAML frontmatter:
 
@@ -261,11 +259,9 @@ Each completion item shows:
 
 Provides intelligent autocomplete for [quarto-now](https://github.com/gadenbuie/quarto-now) timestamp shortcodes.
 
-#### Alias Autocomplete
-
 Type inside `{{< now ... >}}` shortcodes to get suggestions for predefined format aliases:
 
-<!-- TODO: Add gif showing now autocomplete -->
+![](images/now.gif)
 
 **Date aliases:**
 - `year` - Four-digit year (e.g., 2024)
