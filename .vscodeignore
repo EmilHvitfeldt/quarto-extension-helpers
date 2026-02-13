@@ -21,6 +21,7 @@ dist/**
 # Documentation (optional - remove if you want these in package)
 CHANGELOG.md
 CONTRIBUTING.md
+SHORTCODE_SPEC.md
 
 # Config files
 .eslintrc.json
