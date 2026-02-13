@@ -14,6 +14,9 @@ package-lock.json
 # TypeScript source (only need compiled output)
 src/**
 
+# Shortcode specs (development only)
+src/specs/**
+
 # Build artifacts (but not out/ - that's needed)
 dist/**
 *.log

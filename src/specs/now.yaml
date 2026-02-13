@@ -1,0 +1,21 @@
+shortcode: now
+
+arguments:
+  - name: format
+    completion:
+      type: enum
+      values:
+        - year
+        - month
+        - day
+        - weekday
+        - date
+        - isodate
+        - hour
+        - minute
+        - ampm
+        - time
+        - datetime
+        - isotime
+        - isodatetime
+        - timestamp

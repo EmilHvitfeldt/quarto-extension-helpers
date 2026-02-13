@@ -1,0 +1,211 @@
+shortcode: countdown
+
+attributes:
+  # Timer
+  - name: minutes
+    description: Duration in minutes
+    category: Timer
+    completion:
+      type: freeform
+      placeholder: "5"
+
+  - name: seconds
+    description: Duration in seconds
+    category: Timer
+    completion:
+      type: freeform
+      placeholder: "30"
+
+  - name: play_sound
+    description: Play fanfare on completion
+    category: Timer
+    completion:
+      type: boolean
+      default: false
+
+  - name: start_immediately
+    description: Auto-start timer when slide appears
+    category: Timer
+    completion:
+      type: boolean
+      default: false
+
+  - name: warn_when
+    description: Seconds remaining to trigger warning state
+    category: Timer
+    completion:
+      type: freeform
+      placeholder: "60"
+
+  - name: update_every
+    description: Update frequency in seconds
+    category: Timer
+    completion:
+      type: freeform
+      placeholder: "1"
+
+  - name: blink_colon
+    description: Blinking colon effect
+    category: Timer
+    completion:
+      type: boolean
+      default: false
+
+  # Position
+  - name: top
+    description: Distance from top (e.g., "10px", "1em")
+    category: Position
+    completion:
+      type: freeform
+      placeholder: 10px
+
+  - name: bottom
+    description: Distance from bottom
+    category: Position
+    completion:
+      type: freeform
+      placeholder: "0"
+
+  - name: left
+    description: Distance from left
+    category: Position
+    completion:
+      type: freeform
+      placeholder: "0"
+
+  - name: right
+    description: Distance from right
+    category: Position
+    completion:
+      type: freeform
+      placeholder: "0"
+
+  # Style
+  - name: font_size
+    description: Timer text size
+    category: Style
+    completion:
+      type: freeform
+      placeholder: 3rem
+
+  - name: margin
+    description: Spacing around timer
+    category: Style
+    completion:
+      type: freeform
+      placeholder: 0.5em
+
+  - name: padding
+    description: Internal spacing
+    category: Style
+    completion:
+      type: freeform
+      placeholder: 10px 15px
+
+  - name: border_width
+    description: Border thickness
+    category: Style
+    completion:
+      type: freeform
+      placeholder: 3px
+
+  - name: border_radius
+    description: Corner rounding
+    category: Style
+    completion:
+      type: freeform
+      placeholder: 15px
+
+  - name: line_height
+    description: Text line spacing
+    category: Style
+    completion:
+      type: freeform
+      placeholder: "1"
+
+  - name: box_shadow
+    description: Shadow effect
+    category: Style
+    completion:
+      type: freeform
+      placeholder: 0 4px 8px rgba(0,0,0,0.2)
+
+  - name: id
+    description: Unique identifier for custom CSS
+    category: Style
+    completion:
+      type: freeform
+      placeholder: my-timer
+
+  # Color
+  - name: color_border
+    description: Border color
+    category: Color
+    completion:
+      type: color
+
+  - name: color_text
+    description: Text color
+    category: Color
+    completion:
+      type: color
+
+  - name: color_background
+    description: Background color
+    category: Color
+    completion:
+      type: color
+
+  - name: color_running_background
+    description: Running state background
+    category: Color
+    completion:
+      type: color
+
+  - name: color_running_border
+    description: Running state border
+    category: Color
+    completion:
+      type: color
+
+  - name: color_running_text
+    description: Running state text
+    category: Color
+    completion:
+      type: color
+
+  - name: color_finished_background
+    description: Completion state background
+    category: Color
+    completion:
+      type: color
+
+  - name: color_finished_border
+    description: Completion state border
+    category: Color
+    completion:
+      type: color
+
+  - name: color_finished_text
+    description: Completion state text
+    category: Color
+    completion:
+      type: color
+
+  - name: color_warning_background
+    description: Warning state background
+    category: Color
+    completion:
+      type: color
+
+  - name: color_warning_border
+    description: Warning state border
+    category: Color
+    completion:
+      type: color
+
+  - name: color_warning_text
+    description: Warning state text
+    category: Color
+    completion:
+      type: color

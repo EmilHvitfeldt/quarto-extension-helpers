@@ -1,0 +1,9 @@
+shortcode: acr
+
+arguments:
+  - name: key
+    required: true
+    completion:
+      type: frontmatter
+      key: acronyms.keys
+      valuePath: shortname

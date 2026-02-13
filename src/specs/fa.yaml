@@ -1,0 +1,52 @@
+shortcode: fa
+
+arguments:
+  - name: icon
+    required: true
+    completion:
+      type: file-data
+      source: data/fontawesome-icons.json
+      path: icons
+
+attributes:
+  - name: size
+    description: Icon size (relative, literal, or LaTeX)
+    completion:
+      type: enum
+      values:
+        # Relative sizing (HTML)
+        - 2xs
+        - xs
+        - sm
+        - lg
+        - xl
+        - 2xl
+        # Literal sizing (HTML)
+        - 1x
+        - 2x
+        - 3x
+        - 4x
+        - 5x
+        - 6x
+        - 7x
+        - 8x
+        - 9x
+        - 10x
+        # LaTeX sizing (PDF)
+        - tiny
+        - scriptsize
+        - footnotesize
+        - small
+        - normalsize
+        - large
+        - Large
+        - LARGE
+        - huge
+        - Huge
+
+  - name: title
+    description: Accessibility title text
+    quoted: true
+    completion:
+      type: freeform
+      placeholder: icon description
