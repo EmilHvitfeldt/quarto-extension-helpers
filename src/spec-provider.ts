@@ -21,6 +21,7 @@ import {
   analyzeAttributeOnlyContext,
   createReplaceRange,
 } from './shortcode-provider';
+import { parseFrontmatterValues } from './shortcode-utils';
 import { getBrandColors } from './utils';
 import { CSS_COLOR_NAMES } from './color-utils';
 import { ShortcodeContext } from './types';
@@ -61,8 +62,11 @@ class SpecCompletionProvider implements vscode.CompletionItemProvider {
     }
 
     // Get content before cursor for analysis
+    // Find the marker that contains the cursor (not the last one on the line)
     const marker = `{{< ${shortcodeName}`;
-    const markerEnd = lineText.lastIndexOf(marker) + marker.length;
+    const beforeCursor = lineText.substring(0, position.character);
+    const markerStart = beforeCursor.lastIndexOf(marker);
+    const markerEnd = markerStart + marker.length;
     const contentBeforeCursor = lineText.substring(markerEnd, position.character);
     const hasSpaceAfterName = lineText[markerEnd] === ' ';
 
@@ -569,7 +573,8 @@ class SpecCompletionProvider implements vscode.CompletionItemProvider {
     document: vscode.TextDocument
   ): vscode.CompletionItem[] {
     const completions: vscode.CompletionItem[] = [];
-    const values = this.parseFrontmatterValues(document, completion.key, completion.valuePath);
+    const text = document.getText();
+    const values = parseFrontmatterValues(text, completion.key, completion.valuePath);
 
     for (const value of values) {
       if (typedText && !value.key.toLowerCase().startsWith(typedText)) {
@@ -588,69 +593,4 @@ class SpecCompletionProvider implements vscode.CompletionItemProvider {
     return completions;
   }
 
-  /**
-   * Parse values from document frontmatter
-   */
-  private parseFrontmatterValues(
-    document: vscode.TextDocument,
-    key: string,
-    valuePath?: string
-  ): { key: string; detail?: string }[] {
-    const text = document.getText();
-    const values: { key: string; detail?: string }[] = [];
-
-    if (!text.startsWith('---')) {
-      return values;
-    }
-
-    const endIndex = text.indexOf('---', 3);
-    if (endIndex === -1) {
-      return values;
-    }
-
-    const frontmatter = text.substring(3, endIndex);
-
-    // Simple YAML parsing for the specific key
-    // This handles the acronyms.keys pattern
-    const keyParts = key.split('.');
-    let currentIndent = 0;
-    let inTargetSection = false;
-    let sectionDepth = 0;
-
-    const lines = frontmatter.split('\n');
-
-    for (const line of lines) {
-      const trimmed = line.trimStart();
-      const indent = line.length - trimmed.length;
-
-      // Check for section headers
-      for (let i = 0; i < keyParts.length; i++) {
-        const pattern = new RegExp(`^${keyParts[i]}:\\s*$`);
-        if (pattern.test(trimmed) && sectionDepth === i) {
-          sectionDepth++;
-          if (sectionDepth === keyParts.length) {
-            inTargetSection = true;
-            currentIndent = indent;
-          }
-          break;
-        }
-      }
-
-      // Parse list items in target section
-      if (inTargetSection && indent > currentIndent) {
-        // Match "- shortname: value" or "shortname: value"
-        const valueKey = valuePath || 'shortname';
-        const pattern = new RegExp(`${valueKey}:\\s*["']?([^"'\\n]+)["']?`);
-        const match = trimmed.match(pattern);
-        if (match) {
-          values.push({ key: match[1].trim() });
-        }
-      } else if (inTargetSection && indent <= currentIndent && trimmed.length > 0) {
-        // Exited the section
-        break;
-      }
-    }
-
-    return values;
-  }
 }
