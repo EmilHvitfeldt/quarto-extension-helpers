@@ -1,0 +1,54 @@
+---
+title: Now Demo
+filters:
+  - now
+---
+
+## Autocomplete Demo
+
+This document demonstrates autocomplete for the now extension.
+
+### Basic Usage
+
+Type `{{< now ` and press space to see suggestions for date/time format aliases.
+
+Copyright {{< now year >}}
+
+### Try Autocomplete
+
+1. Position your cursor inside `{{< now  >}}` below
+2. Press `Ctrl+Space` or start typing to see alias suggestions
+3. Each suggestion shows the alias name with an example output
+
+{{< now  >}}
+
+### Available Aliases
+
+The following aliases are supported:
+
+**Date aliases:**
+
+- {{< now year >}} - Four-digit year (e.g., 2024)
+- {{< now month >}} - Full month name (e.g., March)
+- {{< now day >}} - Day of month (e.g., 29)
+- {{< now weekday >}} - Full weekday name (e.g., Friday)
+- {{< now date >}} - Short date format (e.g., 03/29/24)
+- {{< now isodate >}} - ISO date format (e.g., 2024-03-29)
+
+**Time aliases:**
+
+- {{< now hour >}} - Hour in 12-hour format (e.g., 02)
+- {{< now minute >}} - Minute (e.g., 30)
+- {{< now ampm >}} - AM/PM indicator (e.g., PM)
+- {{< now time >}} - Time in 12-hour format (e.g., 02:30 PM)
+- {{< now isotime >}} - ISO time format (e.g., 14:30:00)
+
+**Combined aliases:**
+
+- {{< now datetime >}} - Date and time (e.g., 03/29/24 02:30 PM)
+- {{< now isodatetime >}} - ISO date and time (e.g., 2024-03-29T14:30:00)
+- {{< now timestamp >}} - Unix timestamp (e.g., 1711720200)
+
+### How It Works
+
+The extension provides autocomplete for all predefined format aliases in the `{{< now ... >}}` shortcode. These aliases provide convenient shortcuts for common date and time formats.

@@ -11,6 +11,7 @@ VS Code extension providing autocomplete and editor support for popular Quarto e
 - [countdown](https://github.com/gadenbuie/countdown)
 - [downloadthis](https://github.com/shafayetShafee/downloadthis)
 - [acronyms](https://github.com/rchaput/acronyms)
+- [now](https://github.com/gadenbuie/quarto-now)
 
 ## Installation
 
@@ -32,6 +33,7 @@ Each extension's autocomplete support can be individually enabled or disabled vi
 | `quartoExtensionHelpers.countdown.enabled` | `true` | Enable/disable countdown autocomplete |
 | `quartoExtensionHelpers.downloadthis.enabled` | `true` | Enable/disable downloadthis autocomplete |
 | `quartoExtensionHelpers.acronyms.enabled` | `true` | Enable/disable acronyms autocomplete |
+| `quartoExtensionHelpers.now.enabled` | `true` | Enable/disable now autocomplete |
 
 To change these settings:
 1. Open VS Code Settings (Ctrl+, / Cmd+,)
@@ -255,6 +257,43 @@ Each completion item shows:
 {{< acr HTML >}} and {{< acr CSS >}} for styling.
 ```
 
+### Now
+
+Provides intelligent autocomplete for [quarto-now](https://github.com/gadenbuie/quarto-now) timestamp shortcodes.
+
+#### Alias Autocomplete
+
+Type inside `{{< now ... >}}` shortcodes to get suggestions for predefined format aliases:
+
+<!-- TODO: Add gif showing now autocomplete -->
+
+**Date aliases:**
+- `year` - Four-digit year (e.g., 2024)
+- `month` - Full month name (e.g., March)
+- `day` - Day of month (e.g., 29)
+- `weekday` - Full weekday name (e.g., Friday)
+- `date` - Short date format (e.g., 03/29/24)
+- `isodate` - ISO date format (e.g., 2024-03-29)
+
+**Time aliases:**
+- `hour` - Hour in 12-hour format (e.g., 02)
+- `minute` - Minute (e.g., 30)
+- `ampm` - AM/PM indicator (e.g., PM)
+- `time` - Time in 12-hour format (e.g., 02:30 PM)
+- `isotime` - ISO time format (e.g., 14:30:00)
+
+**Combined aliases:**
+- `datetime` - Date and time (e.g., 03/29/24 02:30 PM)
+- `isodatetime` - ISO date and time (e.g., 2024-03-29T14:30:00)
+- `timestamp` - Unix timestamp (e.g., 1711720200)
+
+**Examples:**
+```markdown
+Copyright {{< now year >}}
+Last updated: {{< now isodate >}}
+Generated at {{< now datetime >}}
+```
+
 ## Requirements
 
 - VS Code 1.85.0 or higher
@@ -330,3 +369,4 @@ MIT - see [LICENSE](LICENSE) for details.
 - [Countdown](https://pkg.garrickadenbuie.com/countdown/) - Countdown timers for presentations
 - [Downloadthis](https://github.com/shafayetShafee/downloadthis) - Download buttons for embedded files
 - [Acronyms](https://github.com/rchaput/acronyms) - Acronym management for Quarto documents
+- [Now](https://github.com/gadenbuie/quarto-now) - Timestamp shortcodes for Quarto documents

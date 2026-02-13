@@ -6,6 +6,7 @@ import { FontAwesomeCompletionProvider } from './fontawesome';
 import { CountdownCompletionProvider } from './countdown';
 import { DownloadthisCompletionProvider } from './downloadthis';
 import { AcronymsCompletionProvider } from './acronyms';
+import { NowCompletionProvider } from './now';
 
 export function activate(context: vscode.ExtensionContext): void {
   const quartoSelector: vscode.DocumentSelector = { language: 'quarto', scheme: 'file' };
@@ -35,6 +36,11 @@ export function activate(context: vscode.ExtensionContext): void {
   // Register acronyms provider
   if (config.get<boolean>('acronyms.enabled', true)) {
     registerAcronymsProvider(context, quartoSelector);
+  }
+
+  // Register now provider
+  if (config.get<boolean>('now.enabled', true)) {
+    registerNowProvider(context, quartoSelector);
   }
 }
 
@@ -140,6 +146,26 @@ function registerAcronymsProvider(
 ): void {
   const provider = new AcronymsCompletionProvider();
   // Trigger on space (after "acr")
+  const triggerCharacters = [' '];
+
+  context.subscriptions.push(
+    vscode.languages.registerCompletionItemProvider(
+      selector,
+      provider,
+      ...triggerCharacters
+    )
+  );
+}
+
+/**
+ * Register now autocomplete provider
+ */
+function registerNowProvider(
+  context: vscode.ExtensionContext,
+  selector: vscode.DocumentSelector
+): void {
+  const provider = new NowCompletionProvider();
+  // Trigger on space (after "now")
   const triggerCharacters = [' '];
 
   context.subscriptions.push(

@@ -80,6 +80,11 @@
           "type": "boolean",
           "default": true,
           "description": "Enable autocomplete support for the acronyms extension"
+        },
+        "quartoExtensionHelpers.now.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable autocomplete support for the now extension"
         }
       }
     }

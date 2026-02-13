@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Now support:**
+  - Autocomplete for now shortcodes (`{{< now ALIAS >}}`)
+    - Supported Aliases: `year`, `month`, `day`, `weekday`, `date`, `isodate`, `hour`, `minute`, `ampm`, `time`, `isotime`, `datetime`, `isodatetime`, and `timestamp`.
+
+
 - **Acronyms support:**
   - Autocomplete for acronyms shortcodes (`{{< acr KEY >}}`)
   - Reads acronym definitions from document frontmatter (`acronyms.keys`)
