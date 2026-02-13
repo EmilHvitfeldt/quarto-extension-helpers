@@ -6,7 +6,7 @@ filters:
 
 ## FontAwesome Icons
 
-Regular icon: {{< fa thumbs-up >}}
+Regular icon: {{< fa brnad >}}
 
 Brand icons: {{< fa brands github >}} {{< fa brands twitter >}}
 

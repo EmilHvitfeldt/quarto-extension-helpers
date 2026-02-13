@@ -39,7 +39,7 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./ && npm run copy-specs",
-    "copy-specs": "mkdir -p out/specs && cp src/specs/*.yaml out/specs/",
+    "copy-specs": "mkdir -p out/specs out/data && cp src/specs/*.yaml out/specs/ && cp data/*.json out/data/",
     "watch": "tsc -watch -p ./",
     "lint": "eslint src --ext ts",
     "test:unit": "mocha --require ts-node/register 'src/test/unit/**/*.test.ts'",

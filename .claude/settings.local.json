@@ -18,7 +18,8 @@
       "Bash(npm run lint:*)",
       "Bash(git add:*)",
       "WebFetch(domain:code.visualstudio.com)",
-      "Bash(npm run test:unit:*)"
+      "Bash(npm run test:unit:*)",
+      "Bash(node -e:*)"
     ]
   }
 }

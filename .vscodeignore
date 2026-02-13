@@ -12,10 +12,8 @@ node_modules/**
 package-lock.json
 
 # TypeScript source (only need compiled output)
+# Note: src/specs/*.yaml are copied to out/specs/ during build
 src/**
-
-# Shortcode specs (development only)
-src/specs/**
 
 # Build artifacts (but not out/ - that's needed)
 dist/**

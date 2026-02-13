@@ -83,7 +83,8 @@ export function loadFileData(source: string, dataPath: string): string[] {
   }
 
   try {
-    const sourcePath = path.join(__dirname, '..', source);
+    // __dirname is out/, so data files are at out/data/
+    const sourcePath = path.join(__dirname, source);
     const content = fs.readFileSync(sourcePath, 'utf-8');
     const data = JSON.parse(content);
 
